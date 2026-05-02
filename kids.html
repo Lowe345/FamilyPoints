@@ -422,10 +422,18 @@ function render(data) {
     buildConfetti(true);
   } else {
     const notReady = mergedKids.filter(k => (k.currentPoints != null ? k.currentPoints : config.startPoints) < config.jackpotThreshold).map(k => k.name);
-    banner.className = 'jackpot-banner partial';
-    document.getElementById('bannerEmoji').textContent = '💪';
-    document.getElementById('bannerMain').textContent = notReady.join(' & ') + ' — keep going!';
-    document.getElementById('bannerSub').textContent = 'Everyone needs ' + config.jackpotThreshold + ' pts for $' + config.jackpotReward + ' each!';
+    const earningCount = mergedKids.filter(k => (k.currentPoints != null ? k.currentPoints : config.startPoints) >= config.partialThreshold).length;
+    if (earningCount > 0) {
+      banner.className = 'jackpot-banner partial';
+      document.getElementById('bannerEmoji').textContent = '💪';
+      document.getElementById('bannerMain').textContent = notReady.join(' & ') + ' — keep going!';
+      document.getElementById('bannerSub').textContent = earningCount + ' of ' + mergedKids.length + ' earning $' + config.partialReward + ' — all need ' + config.jackpotThreshold + '+ pts for $' + config.jackpotReward + '!';
+    } else {
+      banner.className = 'jackpot-banner none';
+      document.getElementById('bannerEmoji').textContent = '😬';
+      document.getElementById('bannerMain').textContent = "No rewards yet — let's get going!";
+      document.getElementById('bannerSub').textContent = 'Need ' + config.partialThreshold + '+ pts for $' + config.partialReward + ', or ' + config.jackpotThreshold + '+ each for $' + config.jackpotReward + '!';
+    }
     buildConfetti(false);
   }
 
@@ -492,15 +500,17 @@ function render(data) {
     cell.className = 'data-cell';
     cell.style.setProperty('--delay', (i * 0.1 + 0.3) + 's');
 
+    // Payout logic mirrors parent app exactly:
+    // allJackpot (every kid >= jackpotThreshold) → jackpotReward each
+    // else >= partialThreshold → partialReward
+    // else → $0
     let badgeCls, badgeText;
     if (allJackpot) {
       badgeCls = 'jackpot'; badgeText = '$' + config.jackpotReward + ' 🏆';
-    } else if (pts >= config.jackpotThreshold) {
-      badgeCls = 'partial'; badgeText = '$' + config.jackpotReward + ' ✓';
     } else if (pts >= config.partialThreshold) {
       badgeCls = 'partial'; badgeText = '$' + config.partialReward;
     } else {
-      badgeCls = 'none'; badgeText = 'Keep going';
+      badgeCls = 'none'; badgeText = '$0';
     }
 
     cell.innerHTML = `<div class="payout-badge ${badgeCls}">${badgeText}</div>`;
