@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(74, 144, 226, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            text-align: center;
+            animation: slideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 3.5rem;
+            color: white;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+
+        .game-wrapper {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fredoka', sans-serif;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .cell:hover:not(:disabled) {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .cell:active:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .cell:disabled {
+            cursor: not-allowed;
+            opacity: 1;
+        }
+
+        .cell.x {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .cell.o {
+            background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+        }
+
+        .cell.x:hover:not(:disabled),
+        .cell.o:hover:not(:disabled) {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            min-width: 200px;
+            backdrop-filter: blur(10px);
+        }
+
+        .status {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.5rem;
+            min-height: 1.5em;
+        }
+
+        .status.x-turn {
+            color: #FF6B6B;
+        }
+
+        .status.o-turn {
+            color: #4A90E2;
+        }
+
+        .status.winner {
+            color: #2ECC71;
+            font-size: 1.5rem;
+            animation: pulse 0.6s ease-in-out;
+        }
+
+        .status.draw {
+            color: #F39C12;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .score {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .score-item {
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .score-x {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+            color: white;
+        }
+
+        .score-o {
+            background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+            color: white;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.5);
+        }
+
+        .reset-btn:active {
+            transform: translateY(0);
+        }
+
+        .clear-score-btn {
+            background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+            color: white;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .clear-score-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.5);
+        }
+
+        .clear-score-btn:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .game-wrapper {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .board {
+                grid-template-columns: repeat(3, 80px);
+                gap: 10px;
+                padding: 15px;
+            }
+
+            .cell {
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
+                border-radius: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 TIC TAC TOE</h1>
+        <p class="subtitle">Player vs Player</p>
+
+        <div class="game-wrapper">
+            <div class="board" id="board">
+                <button class="cell" data-index="0"></button>
+                <button class="cell" data-index="1"></button>
+                <button class="cell" data-index="2"></button>
+                <button class="cell" data-index="3"></button>
+                <button class="cell" data-index="4"></button>
+                <button class="cell" data-index="5"></button>
+                <button class="cell" data-index="6"></button>
+                <button class="cell" data-index="7"></button>
+                <button class="cell" data-index="8"></button>
+            </div>
+
+            <div class="info-panel">
+                <div class="status" id="status">X's Turn</div>
+                <div class="score">
+                    <div class="score-item score-x">X: <span id="score-x">0</span></div>
+                    <div class="score-item score-o">O: <span id="score-o">0</span></div>
+                </div>
+                <div class="buttons">
+                    <button class="reset-btn" id="reset-btn">New Game</button>
+                    <button class="clear-score-btn" id="clear-score-btn">Clear Score</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const status = document.getElementById('status');
+        const resetBtn = document.getElementById('reset-btn');
+        const clearScoreBtn = document.getElementById('clear-score-btn');
+        const scoreXEl = document.getElementById('score-x');
+        const scoreOEl = document.getElementById('score-o');
+
+        let gameBoard = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameOver = false;
+        let scoreX = localStorage.getItem('scoreX') ? parseInt(localStorage.getItem('scoreX')) : 0;
+        let scoreO = localStorage.getItem('scoreO') ? parseInt(localStorage.getItem('scoreO')) : 0;
+
+        const winConditions = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+
+        function updateScore() {
+            scoreXEl.textContent = scoreX;
+            scoreOEl.textContent = scoreO;
+            localStorage.setItem('scoreX', scoreX);
+            localStorage.setItem('scoreO', scoreO);
+        }
+
+        function updateStatus() {
+            if (gameOver) {
+                const winner = checkWinner();
+                if (winner) {
+                    status.textContent = `🎉 Player ${winner} Wins!`;
+                    status.className = 'status winner';
+                } else {
+                    status.textContent = "It's a Draw!";
+                    status.className = 'status draw';
+                }
+            } else {
+                status.textContent = `${currentPlayer}'s Turn`;
+                status.className = `status ${currentPlayer === 'X' ? 'x-turn' : 'o-turn'}`;
+            }
+        }
+
+        function checkWinner() {
+            for (let condition of winConditions) {
+                const [a, b, c] = condition;
+                if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
+                    return gameBoard[a];
+                }
+            }
+            return null;
+        }
+
+        function isBoardFull() {
+            return gameBoard.every(cell => cell !== '');
+        }
+
+        function handleCellClick(e) {
+            if (gameOver) return;
+
+            const index = e.target.dataset.index;
+            if (gameBoard[index] !== '') return;
+
+            gameBoard[index] = currentPlayer;
+            e.target.textContent = currentPlayer;
+            e.target.classList.add(currentPlayer.toLowerCase());
+            e.target.disabled = true;
+
+            if (checkWinner()) {
+                gameOver = true;
+                if (currentPlayer === 'X') {
+                    scoreX++;
+                } else {
+                    scoreO++;
+                }
+                updateScore();
+                updateStatus();
+            } else if (isBoardFull()) {
+                gameOver = true;
+                updateStatus();
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                updateStatus();
+            }
+        }
+
+        function resetGame() {
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameOver = false;
+
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.className = 'cell';
+                cell.disabled = false;
+            });
+
+            updateStatus();
+        }
+
+        function clearScore() {
+            scoreX = 0;
+            scoreO = 0;
+            updateScore();
+            resetGame();
+        }
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+        resetBtn.addEventListener('click', resetGame);
+        clearScoreBtn.addEventListener('click', clearScore);
+
+        updateScore();
+        updateStatus();
+    </script>
+</body>
+</html>
