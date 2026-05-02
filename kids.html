@@ -333,7 +333,7 @@ function buildConfetti(active) {
 }
 
 // ── Encouragement generator ───────────────────────────
-function getEncouragement(kid, config, allJackpot) {
+function getEncouragement(kid, config, allJackpot, allKids) {
   const pts = kid.currentPoints != null ? kid.currentPoints : config.startPoints;
   const goal = config.jackpotThreshold;
   const needed = goal - pts;
@@ -346,8 +346,20 @@ function getEncouragement(kid, config, allJackpot) {
         .map(c => c.name || c.title || '').filter(Boolean).slice(-2)
     : [];
 
-  if (allJackpot || pts >= goal) {
-    return { icon: '🏆', text: 'Amazing job! You hit your goal!' };
+  if (allJackpot) {
+    return { icon: '🏆', text: 'Amazing — everyone hit the goal! Enjoy that $' + config.jackpotReward + '!' };
+  }
+
+  if (pts >= goal) {
+    // Kid is done — nudge them to help siblings still working toward goal
+    const siblingsNeeded = allKids
+      ? allKids.filter(k => k !== kid && (k.currentPoints != null ? k.currentPoints : config.startPoints) < goal).map(k => k.name)
+      : [];
+    if (siblingsNeeded.length > 0) {
+      const names = siblingsNeeded.join(' & ');
+      return { icon: '🤝', text: 'Goal reached! Help ' + names + ' get to ' + goal + ' pts so everyone gets $' + config.jackpotReward + '!' };
+    }
+    return { icon: '🤝', text: 'Goal reached! Help your siblings hit ' + goal + ' pts so everyone gets $' + config.jackpotReward + '!' };
   }
 
   if (pct >= 0.8) {
@@ -531,7 +543,7 @@ function render(data) {
     const cell = document.createElement('div');
     cell.className = 'data-cell';
     cell.style.setProperty('--delay', (i * 0.1 + 0.4) + 's');
-    const enc = getEncouragement(kid, config, allJackpot);
+    const enc = getEncouragement(kid, config, allJackpot, mergedKids);
     cell.innerHTML = `<span class="encourage-icon">${enc.icon}</span><div class="encourage-text">${enc.text}</div>`;
     encourageRow.appendChild(cell);
   });
