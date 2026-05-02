@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Points Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#fdf6ec; --card:#fff; --accent1:#ff7043; --accent2:#42a5f5;
+    --gold-dark:#f9a825; --text:#2d2d2d; --muted:#8d8d8d;
+    --border:#e8ddd0; --shadow:0 4px 20px rgba(0,0,0,0.08);
+    --shadow-hover:0 8px 32px rgba(0,0,0,0.14); --radius:20px;
+    --danger:#c62828;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0 0 80px;}
+  header{background:linear-gradient(135deg,#ff7043 0%,#ff8a65 50%,#ffa040 100%);padding:28px 24px 24px;text-align:center;position:relative;overflow:hidden;}
+  header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:rgba(255,255,255,0.1);border-radius:50%;}
+  header::after{content:'';position:absolute;bottom:-60px;left:-20px;width:200px;height:200px;background:rgba(255,255,255,0.06);border-radius:50%;}
+  header h1{font-family:'Baloo 2',cursive;font-size:2rem;font-weight:800;color:white;text-shadow:0 2px 8px rgba(0,0,0,0.15);position:relative;}
+  header p{color:rgba(255,255,255,0.85);font-size:0.9rem;margin-top:4px;position:relative;}
+  .settings-btn{position:absolute;top:20px;right:18px;background:rgba(255,255,255,0.2);border:none;border-radius:12px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:white;transition:background 0.2s;z-index:2;}
+  .settings-btn:hover{background:rgba(255,255,255,0.35);}
+  .sync-bar{background:#fff8f0;border-bottom:2px solid var(--border);padding:6px 16px;display:flex;align-items:center;gap:8px;font-size:0.75rem;font-weight:700;}
+  .sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .sync-dot.connected{background:#66bb6a;} .sync-dot.offline{background:#ff7043;} .sync-dot.syncing{background:#ffd54f;animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  .week-bar{background:white;border-bottom:2px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .week-label{font-family:'Baloo 2',cursive;font-weight:700;font-size:1rem;}
+  .week-label span{color:var(--accent1);}
+  .new-week-btn{background:var(--accent1);color:white;border:none;border-radius:10px;padding:7px 16px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;transition:all 0.2s;}
+  .new-week-btn:hover{background:#e64a19;transform:translateY(-1px);}
+  .reward-banner{margin:16px 16px 0;border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;gap:14px;font-weight:700;font-size:1rem;transition:all 0.4s;}
+  .reward-banner.jackpot{background:linear-gradient(135deg,#fff8e1,#fff3cd);border:2px solid var(--gold-dark);color:#7a5c00;}
+  .reward-banner.partial{background:linear-gradient(135deg,#e8f5e9,#d4edda);border:2px solid #66bb6a;color:#2e7d32;}
+  .reward-banner.none{background:linear-gradient(135deg,#fce4ec,#f8d7da);border:2px solid #ef9a9a;color:#b71c1c;}
+  .reward-icon{font-size:2rem;flex-shrink:0;}
+  .reward-text .reward-title{font-family:'Baloo 2',cursive;font-size:1.1rem;}
+  .reward-text .reward-sub{font-weight:600;font-size:0.85rem;opacity:0.8;margin-top:2px;}
+  .kids-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;padding:16px;}
+  .kid-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;transition:box-shadow 0.2s;}
+  .kid-card:hover{box-shadow:var(--shadow-hover);}
+  .kid-hero{display:flex;align-items:center;gap:16px;padding:20px 20px 18px;}
+  .kid-avatar{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;border:3px solid rgba(255,255,255,0.7);box-shadow:0 3px 12px rgba(0,0,0,0.14);}
+  .kid-identity{flex:1;min-width:0;}
+  .kid-name{font-family:'Baloo 2',cursive;font-size:1.3rem;font-weight:800;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .kid-payout{font-family:'Baloo 2',cursive;font-size:0.95rem;font-weight:700;margin-top:5px;padding:3px 10px;border-radius:20px;display:inline-block;}
+  .kid-payout.gold{background:#fff8e1;color:#f9a825;border:1.5px solid #ffe082;}
+  .kid-payout.green{background:#e8f5e9;color:#2e7d32;border:1.5px solid #a5d6a7;}
+  .kid-payout.red{background:#fce4ec;color:#c62828;border:1.5px solid #ef9a9a;}
+  .kid-points-hero{display:flex;flex-direction:column;align-items:center;flex-shrink:0;background:var(--bg);border-radius:16px;padding:8px 16px;border:2px solid;min-width:72px;}
+  .points-num{font-family:'Baloo 2',cursive;font-size:2.8rem;font-weight:800;line-height:1;}
+  .points-label{font-size:0.6rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;opacity:0.6;margin-top:1px;}
+  .kid-actions{display:flex;align-items:center;gap:10px;padding:0 16px 16px;}
+  .ctrl-btn{width:48px;height:48px;border-radius:50%;border:none;font-size:1.7rem;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,0.1);flex-shrink:0;}
+  .ctrl-btn:active{transform:scale(0.88);}
+  .btn-minus{background:#fce4ec;color:#c62828;} .btn-minus:hover{background:#ef9a9a;color:white;}
+  .btn-plus{background:#e8f5e9;color:#2e7d32;} .btn-plus:hover{background:#66bb6a;color:white;}
+  .chore-combo{flex:1;display:flex;gap:6px;min-width:0;}
+  .chore-select{flex:1;border:1.5px solid var(--border);border-radius:12px;padding:8px 10px;font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:600;outline:none;background:white;cursor:pointer;color:var(--text);min-width:0;transition:border-color 0.2s;}
+  .chore-select:focus{border-color:var(--accent1);}
+  .chore-log-btn{background:var(--accent1);color:white;border:none;border-radius:12px;padding:8px 12px;font-weight:700;font-size:0.8rem;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background 0.15s;}
+  .chore-log-btn:hover{background:#e64a19;}
+  .log-section{border-top:1px solid var(--border);padding:12px 16px;}
+  .log-toggle{background:none;border:none;font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:700;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;padding:0;width:100%;}
+  .log-toggle:hover{color:var(--text);}
+  .log-toggle .arrow{transition:transform 0.2s;}
+  .log-toggle.open .arrow{transform:rotate(180deg);}
+  .add-note-row{display:flex;gap:8px;margin-top:10px;}
+  .note-input{flex:1;border:1.5px solid var(--border);border-radius:10px;padding:7px 12px;font-family:'Nunito',sans-serif;font-size:0.8rem;outline:none;transition:border-color 0.2s;}
+  .note-input:focus{border-color:var(--accent2);}
+  .note-submit{background:var(--accent2);color:white;border:none;border-radius:10px;padding:7px 13px;font-weight:700;font-size:0.8rem;cursor:pointer;}
+  .note-submit:hover{background:#1976d2;}
+  .log-list{margin-top:10px;max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;}
+  .log-item{display:flex;align-items:flex-start;gap:8px;font-size:0.78rem;padding:6px 8px;border-radius:8px;background:#fafafa;border:1px solid #f0f0f0;}
+  .log-badge{font-weight:800;padding:1px 7px;border-radius:6px;font-size:0.75rem;flex-shrink:0;margin-top:1px;}
+  .log-badge.pos{background:#e8f5e9;color:#2e7d32;} .log-badge.neg{background:#fce4ec;color:#c62828;} .log-badge.neu{background:#e3f2fd;color:#1565c0;}
+  .log-text{flex:1;color:#555;} .log-time{color:#aaa;flex-shrink:0;font-size:0.7rem;margin-top:2px;}
+  .log-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:0.9rem;padding:0 2px;line-height:1;flex-shrink:0;}
+  .log-del:hover{color:#e53935;}
+  .no-log{color:var(--muted);font-size:0.78rem;text-align:center;padding:8px 0;}
+  .summary-section{margin:0 16px 16px;background:white;border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;}
+  .summary-title{font-family:'Baloo 2',cursive;font-size:1.05rem;font-weight:700;margin-bottom:12px;}
+  .summary-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.9rem;}
+  .summary-row:last-child{border-bottom:none;}
+  .summary-row .name{font-weight:700;}
+  .summary-row .payout{font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;}
+  .payout-gold{color:var(--gold-dark);} .payout-green{color:#2e7d32;} .payout-red{color:#c62828;}
+  .kid-0 .kid-avatar{background:linear-gradient(135deg,#ff7043,#ff8a65);}
+  .kid-0 .kid-points-hero{border-color:#ff7043;color:#ff7043;}
+  .kid-0 .kid-name{color:#bf360c;}
+  .kid-0 .kid-hero{background:linear-gradient(135deg,#fff8f6,#fff);}
+  .kid-1 .kid-avatar{background:linear-gradient(135deg,#42a5f5,#64b5f6);}
+  .kid-1 .kid-points-hero{border-color:#42a5f5;color:#42a5f5;}
+  .kid-1 .kid-name{color:#0d47a1;}
+  .kid-1 .kid-hero{background:linear-gradient(135deg,#f3f9ff,#fff);}
+  .kid-2 .kid-avatar{background:linear-gradient(135deg,#66bb6a,#81c784);}
+  .kid-2 .kid-points-hero{border-color:#66bb6a;color:#66bb6a;}
+  .kid-2 .kid-name{color:#1b5e20;}
+  .kid-2 .kid-hero{background:linear-gradient(135deg,#f4fbf4,#fff);}
+  .kid-3 .kid-avatar{background:linear-gradient(135deg,#ab47bc,#ce93d8);}
+  .kid-3 .kid-points-hero{border-color:#ab47bc;color:#ab47bc;}
+  .kid-3 .kid-name{color:#4a148c;}
+  .kid-3 .kid-hero{background:linear-gradient(135deg,#fdf4ff,#fff);}
+  .kid-4 .kid-avatar{background:linear-gradient(135deg,#26c6da,#80deea);}
+  .kid-4 .kid-points-hero{border-color:#26c6da;color:#26c6da;}
+  .kid-4 .kid-name{color:#006064;}
+  .kid-4 .kid-hero{background:linear-gradient(135deg,#f0fdff,#fff);}
+  .settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s;display:flex;justify-content:flex-end;}
+  .settings-overlay.show{opacity:1;pointer-events:all;}
+  .settings-panel{background:white;width:min(440px,100vw);height:100%;overflow-y:auto;transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;}
+  .settings-overlay.show .settings-panel{transform:translateX(0);}
+  .settings-header{background:linear-gradient(135deg,#ff7043,#ffa040);padding:24px 20px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .settings-header h2{font-family:'Baloo 2',cursive;color:white;font-size:1.4rem;}
+  .settings-close{background:rgba(255,255,255,0.2);border:none;border-radius:10px;width:36px;height:36px;color:white;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .settings-close:hover{background:rgba(255,255,255,0.35);}
+  .settings-body{padding:20px;flex:1;display:flex;flex-direction:column;gap:24px;}
+  .settings-section{display:flex;flex-direction:column;gap:12px;}
+  .settings-section-title{font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;color:var(--accent1);border-bottom:2px solid #fce4dc;padding-bottom:6px;}
+  .setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .setting-label{font-weight:700;font-size:0.9rem;flex:1;}
+  .setting-hint{font-size:0.75rem;color:var(--muted);margin-top:2px;}
+  .setting-input{width:80px;border:2px solid var(--border);border-radius:10px;padding:7px 10px;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:700;text-align:center;outline:none;transition:border-color 0.2s;}
+  .setting-input:focus{border-color:var(--accent1);}
+  .kids-editor{display:flex;flex-direction:column;gap:12px;}
+  .kid-edit-row{display:flex;align-items:center;gap:10px;background:#fafafa;border:1.5px solid var(--border);border-radius:14px;padding:10px 12px;}
+  .kid-edit-emoji{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;flex-shrink:0;border:2px dashed var(--border);transition:border-color 0.2s;position:relative;}
+  .kid-edit-emoji:hover{border-color:var(--accent1);}
+  .kid-edit-emoji-hint{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:0.6rem;color:var(--muted);white-space:nowrap;pointer-events:none;}
+  .kid-edit-name{flex:1;border:1.5px solid var(--border);border-radius:10px;padding:7px 10px;font-family:'Nunito',sans-serif;font-size:0.85rem;font-weight:700;outline:none;transition:border-color 0.2s;}
+  .kid-edit-name:focus{border-color:var(--accent2);}
+  .kid-remove-btn{width:30px;height:30px;border-radius:50%;border:none;background:#fce4ec;color:#c62828;font-size:1.1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background 0.15s;}
+  .kid-remove-btn:hover{background:#ef9a9a;color:white;}
+  .add-kid-btn{background:#e8f5e9;color:#2e7d32;border:2px dashed #66bb6a;border-radius:14px;padding:10px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .add-kid-btn:hover{background:#c8e6c9;}
+  .chores-editor{display:flex;flex-direction:column;gap:8px;}
+  .chore-edit-row{display:flex;align-items:center;gap:8px;background:#fafafa;border:1.5px solid var(--border);border-radius:12px;padding:8px 10px;cursor:default;}
+  .drag-handle{color:#ccc;cursor:grab;font-size:1rem;flex-shrink:0;padding:0 2px;user-select:none;}
+  .drag-handle:active{cursor:grabbing;}
+  .chore-edit-name{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Nunito',sans-serif;font-size:0.82rem;font-weight:600;outline:none;transition:border-color 0.2s;}
+  .chore-edit-name:focus{border-color:var(--accent2);}
+  .chore-edit-pts{width:48px;border:1.5px solid var(--border);border-radius:8px;padding:6px 4px;font-family:'Nunito',sans-serif;font-size:0.82rem;font-weight:700;text-align:center;outline:none;}
+  .chore-edit-pts:focus{border-color:var(--accent1);}
+  .chore-pts-label{font-size:0.7rem;color:var(--muted);white-space:nowrap;}
+  .chore-remove-btn{width:26px;height:26px;border-radius:50%;border:none;background:#fce4ec;color:#c62828;font-size:1rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .chore-remove-btn:hover{background:#ef9a9a;color:white;}
+  .add-chore-btn{background:#e3f2fd;color:#1565c0;border:2px dashed #42a5f5;border-radius:12px;padding:9px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .add-chore-btn:hover{background:#bbdefb;}
+  .chore-edit-row.drag-over{border-color:var(--accent1);background:#fff3e0;}
+  .danger-zone{border:2px solid #ffcdd2;border-radius:14px;padding:14px;background:#fff5f5;}
+  .danger-zone-title{font-family:'Baloo 2',cursive;font-size:0.9rem;font-weight:700;color:var(--danger);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+  .danger-btn{width:100%;background:white;color:var(--danger);border:2px solid #ffcdd2;border-radius:10px;padding:10px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;transition:all 0.2s;text-align:left;display:flex;align-items:center;gap:8px;}
+  .danger-btn:hover{background:#fce4ec;border-color:var(--danger);}
+  .emoji-picker-popup{position:fixed;z-index:400;background:white;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.18);padding:12px;width:280px;display:none;}
+  .emoji-picker-popup.show{display:block;}
+  .emoji-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-height:200px;overflow-y:auto;}
+  .emoji-opt{width:34px;height:34px;border-radius:8px;border:none;background:none;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;}
+  .emoji-opt:hover{background:#f5f5f5;}
+  .emoji-picker-title{font-family:'Baloo 2',cursive;font-size:0.85rem;font-weight:700;color:var(--muted);margin-bottom:8px;}
+  .settings-footer{padding:16px 20px;border-top:2px solid var(--border);flex-shrink:0;display:flex;gap:10px;}
+  .btn-save{flex:1;background:var(--accent1);color:white;border:none;border-radius:12px;padding:12px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;transition:background 0.2s;}
+  .btn-save:hover{background:#e64a19;}
+  .btn-cancel-settings{background:#f5f5f5;color:#555;border:none;border-radius:12px;padding:12px 20px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+  .modal-overlay.show{opacity:1;pointer-events:all;}
+  .modal{background:white;border-radius:var(--radius);padding:28px 24px;max-width:360px;width:90%;text-align:center;transform:scale(0.9);transition:transform 0.2s;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+  .modal-overlay.show .modal{transform:scale(1);}
+  .modal h2{font-family:'Baloo 2',cursive;font-size:1.3rem;margin-bottom:10px;}
+  .modal p{color:var(--muted);font-size:0.9rem;margin-bottom:20px;line-height:1.5;}
+  .modal p strong{color:var(--danger);}
+  .modal-btns{display:flex;gap:10px;justify-content:center;}
+  .modal-cancel{background:#f5f5f5;color:#555;border:none;border-radius:12px;padding:10px 22px;font-weight:700;font-family:'Nunito',sans-serif;font-size:0.9rem;cursor:pointer;}
+  .modal-confirm{background:var(--accent1);color:white;border:none;border-radius:12px;padding:10px 22px;font-weight:700;font-family:'Nunito',sans-serif;font-size:0.9rem;cursor:pointer;}
+  .modal-confirm:hover{background:#e64a19;}
+  .modal-confirm.danger{background:var(--danger);}
+  .modal-confirm.danger:hover{background:#b71c1c;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#2d2d2d;color:white;padding:10px 22px;border-radius:20px;font-size:0.85rem;font-weight:600;z-index:500;transition:transform 0.3s;white-space:nowrap;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  @media(max-width:480px){.kids-grid{grid-template-columns:1fr;}header h1{font-size:1.5rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>⭐ Family Points Tracker</h1>
+  <p>Earn points, earn rewards!</p>
+  <button class="settings-btn" onclick="openSettings()" title="Settings">⚙️</button>
+</header>
+<div class="sync-bar" id="syncBar">
+  <div class="sync-dot offline" id="syncDot"></div>
+  <span id="syncLabel">Connecting…</span>
+</div>
+<div class="week-bar">
+  <div class="week-label">Week of <span id="weekDate">—</span></div>
+  <button class="new-week-btn" onclick="confirmNewWeek()">🔄 New Week</button>
+</div>
+<div class="reward-banner" id="rewardBanner">
+  <div class="reward-icon" id="rewardIcon">🎉</div>
+  <div class="reward-text">
+    <div class="reward-title" id="rewardTitle">Loading…</div>
+    <div class="reward-sub" id="rewardSub"></div>
+  </div>
+</div>
+<div class="kids-grid" id="kidsGrid"></div>
+<div class="summary-section">
+  <div class="summary-title">💰 This Week's Payouts</div>
+  <div id="summaryRows"></div>
+</div>
+<div class="settings-overlay" id="settingsOverlay" onclick="handleSettingsOverlayClick(event)">
+  <div class="settings-panel">
+    <div class="settings-header">
+      <h2>⚙️ Settings</h2>
+      <button class="settings-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-section">
+        <div class="settings-section-title">💰 Reward Amounts</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Jackpot reward</div><div class="setting-hint">Each kid gets this when all reach the jackpot threshold</div></div>
+          <input class="setting-input" type="number" id="s_jackpotReward" min="0" step="1">
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Partial reward</div><div class="setting-hint">Per kid with minimum points in a non-jackpot week</div></div>
+          <input class="setting-input" type="number" id="s_partialReward" min="0" step="1">
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">🎯 Point Thresholds</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Jackpot threshold</div><div class="setting-hint">Points each kid needs for everyone to get the jackpot</div></div>
+          <input class="setting-input" type="number" id="s_jackpotThreshold" min="1" step="1">
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Minimum threshold</div><div class="setting-hint">Minimum points to earn the partial reward</div></div>
+          <input class="setting-input" type="number" id="s_partialThreshold" min="0" step="1">
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Starting points</div><div class="setting-hint">Points each child starts with each Sunday</div></div>
+          <input class="setting-input" type="number" id="s_startPoints" min="0" step="1">
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">👨‍👩‍👧‍👦 Children <span style="font-size:0.75rem;font-weight:400;color:var(--muted)">(tap emoji to change avatar)</span></div>
+        <div class="kids-editor" id="kidsEditor"></div>
+        <button class="add-kid-btn" onclick="addKidRow()" id="addKidBtn">➕ Add child</button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">🧹 Chores &amp; Tasks <span style="font-size:0.75rem;font-weight:400;color:var(--muted)">(drag ☰ to reorder)</span></div>
+        <div class="chores-editor" id="choresEditor"></div>
+        <button class="add-chore-btn" onclick="addChoreRow()">➕ Add chore</button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">⚠️ Data Management</div>
+        <div class="danger-zone">
+          <div class="danger-zone-title">🗑️ Danger Zone</div>
+          <button class="danger-btn" onclick="promptWipeHistory()">🗑️ Wipe all historical data<span style="font-size:0.72rem;font-weight:400;display:block;color:#888;margin-top:2px;">Permanently deletes all past weeks. Current week is kept.</span></button>
+          <div style="height:8px;"></div>
+          <button class="danger-btn" onclick="promptWipeEverything()">💥 Wipe everything &amp; reset<span style="font-size:0.72rem;font-weight:400;display:block;color:#888;margin-top:2px;">Deletes all data including current week and resets to defaults.</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-footer">
+      <button class="btn-cancel-settings" onclick="closeSettings()">Cancel</button>
+      <button class="btn-save" onclick="saveSettings()">💾 Save Settings</button>
+    </div>
+  </div>
+</div>
+<div class="emoji-picker-popup" id="emojiPicker">
+  <div class="emoji-picker-title">Choose an avatar</div>
+  <div class="emoji-grid" id="emojiGrid"></div>
+</div>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>🔄 Start New Week?</h2>
+    <p>This will save the current week to history and reset all kids to their starting points.</p>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('modalOverlay')">Cancel</button>
+      <button class="modal-confirm" onclick="newWeek()">Yes, New Week!</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="wipeHistoryModal1">
+  <div class="modal">
+    <h2>🗑️ Wipe History?</h2>
+    <p>This will permanently delete <strong>all previous weeks</strong>. The current week will be kept. This cannot be undone.</p>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('wipeHistoryModal1')">Cancel</button>
+      <button class="modal-confirm danger" onclick="wipeHistoryConfirm2()">Yes, continue</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="wipeHistoryModal2">
+  <div class="modal">
+    <h2>⚠️ Are you absolutely sure?</h2>
+    <p><strong>All historical week data will be permanently deleted.</strong> There is no way to recover this. Are you certain you want to proceed?</p>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('wipeHistoryModal2')">No, keep my data</button>
+      <button class="modal-confirm danger" onclick="wipeHistory()">Yes, delete history</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="wipeAllModal1">
+  <div class="modal">
+    <h2>💥 Reset Everything?</h2>
+    <p>This will delete <strong>all data</strong> — every week, every log entry, all settings — and reset the app to its defaults. This cannot be undone.</p>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('wipeAllModal1')">Cancel</button>
+      <button class="modal-confirm danger" onclick="wipeAllConfirm2()">Yes, continue</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="wipeAllModal2">
+  <div class="modal">
+    <h2>⚠️ Final warning</h2>
+    <p><strong>Every piece of data will be permanently erased.</strong> Kids, settings, all history. The app will restart fresh. You cannot undo this.</p>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('wipeAllModal2')">No, keep everything</button>
+      <button class="modal-confirm danger" onclick="wipeEverything()">Yes, wipe everything</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCLMsal6EP0T8m6a9qaS79vaSiQAyzV4ag",
+  authDomain: "kids-points-afabf.firebaseapp.com",
+  databaseURL: "https://kids-points-afabf-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kids-points-afabf",
+  storageBucket: "kids-points-afabf.firebasestorage.app",
+  messagingSenderId: "746330750970",
+  appId: "1:746330750970:web:a8dc2dcbc9c9460f81ee43"
+};
+const EMOJIS = ['🦁','🦊','🐻','🐼','🐨','🐯','🦋','🐸','🐧','🦄','🐶','🐱','🐭','🐰','🦝','🐮','🐷','🐙','🦕','🐲','🦖','🦓','🦒','🐘','🦏','🐬','🐳','🦈','🦅','🦜','🐢','🦎','🦔','🌟','⚡','🔥','🌈','🍀','🎯','🚀','🎸','🏆','🎨','💎','🌺','🍓','🎮','⚽','🏀','🎪','🎭','🦸','🧙','🧚','🧜','🧝','🥷','🦩','🦚','🦜'];
+const DEFAULT_CONFIG = {jackpotReward:10,partialReward:5,jackpotThreshold:5,partialThreshold:1,startPoints:5};
+const DEFAULT_KIDS = [{name:'Child 1',emoji:'🦁'},{name:'Child 2',emoji:'🦊'},{name:'Child 3',emoji:'🐻'}];
+const DEFAULT_CHORES = [{label:'Empty dishwasher',pts:1},{label:'Set dinner table',pts:1},{label:'Move dirty laundry',pts:1},{label:'Tidy bedroom',pts:1},{label:'Vacuum living room',pts:2},{label:'Take out rubbish',pts:1},{label:'Feed the pet',pts:1},{label:'Good behaviour',pts:1},{label:'Helped a sibling',pts:1}];
+let db=null,fbConnected=false;
+function weekKey(date){const d=date||new Date();return d.toISOString().slice(0,10);}
+function emptyWeek(config,kids){return{key:weekKey(),startDate:new Date().toISOString(),endDate:null,kids:kids.map(k=>({name:k.name,emoji:k.emoji,startPoints:config.startPoints,currentPoints:config.startPoints,log:{}}))}}
+function freshState(){return{config:{...DEFAULT_CONFIG},chores:DEFAULT_CHORES.map(c=>({...c})),currentWeek:emptyWeek(DEFAULT_CONFIG,DEFAULT_KIDS),weeks:{},kids:DEFAULT_KIDS.map(k=>({...k}))}}
+function loadLocalState(){try{const s=localStorage.getItem('familyPointsV4');if(s)return JSON.parse(s);}catch(e){}return freshState();}
+function saveLocalState(){localStorage.setItem('familyPointsV4',JSON.stringify(state));}
+let state=loadLocalState();
+if(!state.chores)state.chores=DEFAULT_CHORES.map(c=>({...c}));
+if(!state.weeks)state.weeks={};
+if(!state.kids)state.kids=DEFAULT_KIDS.map(k=>({...k}));
+if(!state.currentWeek)state.currentWeek=emptyWeek(state.config,state.kids);
+function cfg(){return state.config;}
+function formatDate(iso){return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+function timeNow(){return new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
+function initFirebase(){
+  if(!FIREBASE_CONFIG)return;
+  setSyncStatus('syncing','Connecting to Firebase…');
+  const sdkBase='https://www.gstatic.com/firebasejs/10.12.0';
+  loadScript(`${sdkBase}/firebase-app-compat.js`,()=>{
+    loadScript(`${sdkBase}/firebase-database-compat.js`,()=>{
+      try{
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db=firebase.database();
+        db.ref('familyPoints').on('value',snap=>{
+          const data=snap.val();
+          if(data){
+            if(data.config)mergeConfig(data.config);
+            if(data.weeks)state.weeks=data.weeks;
+            if(data.currentWeek)mergeCurrentWeek(data.currentWeek);
+          }else{
+            db.ref('familyPoints').set(exportForFirebase());
+          }
+          fbConnected=true;
+          setSyncStatus('connected','Synced with Firebase');
+          renderKids();
+        },err=>{setSyncStatus('offline','Firebase error: '+err.message);});
+        db.ref('.info/connected').on('value',snap=>{
+          if(!snap.val())setSyncStatus('offline','Offline — changes will sync when reconnected');
+          else if(fbConnected)setSyncStatus('connected','Synced with Firebase');
+        });
+      }catch(e){setSyncStatus('offline','Firebase init failed: '+e.message);}
+    });
+  });
+}
+function loadScript(src,cb){const s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s);}
+function exportForFirebase(){return{config:{...state.config,kids:Object.fromEntries(state.kids.map((k,i)=>['kid_'+i,{name:k.name,emoji:k.emoji}])),chores:Object.fromEntries(state.chores.map((c,i)=>['chore_'+i,{...c}]))},currentWeek:state.currentWeek,weeks:state.weeks};}
+function mergeConfig(fbConfig){const{kids,chores,...cfg}=fbConfig;state.config={...DEFAULT_CONFIG,...cfg};if(kids){state.kids=Object.entries(kids).sort((a,b)=>a[0].localeCompare(b[0])).map(([,v])=>v);}if(chores){state.chores=Object.entries(chores).sort((a,b)=>a[0].localeCompare(b[0])).map(([,v])=>v);}}
+function mergeCurrentWeek(fbWeek){state.currentWeek=fbWeek;if(state.currentWeek.kids){state.currentWeek.kids=state.currentWeek.kids.map(kid=>({...kid,log:kid.log||{}}));}}
+function setSyncStatus(status,label){document.getElementById('syncDot').className='sync-dot '+status;document.getElementById('syncLabel').textContent=label;}
+function fbWrite(path,value){if(!db){saveLocalState();return;}setSyncStatus('syncing','Saving…');db.ref('familyPoints/'+path).set(value).then(()=>setSyncStatus('connected','Synced')).catch(e=>setSyncStatus('offline','Save failed: '+e.message));saveLocalState();}
+function fbUpdate(path,updates){if(!db){saveLocalState();return;}setSyncStatus('syncing','Saving…');db.ref('familyPoints/'+path).update(updates).then(()=>setSyncStatus('connected','Synced')).catch(e=>setSyncStatus('offline','Save failed: '+e.message));saveLocalState();}
+function getKidLog(kidIdx){const logObj=state.currentWeek.kids[kidIdx]?.log||{};return Object.entries(logObj).map(([id,v])=>({id,...v})).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));}
+function getStatus(points){const c=cfg();if(points>=c.jackpotThreshold)return{label:`On track for $${c.jackpotReward}!`,cls:'status-great'};if(points>=c.partialThreshold)return{label:`On track for $${c.partialReward}`,cls:'status-ok'};return{label:'No reward this week',cls:'status-low'};}
+function renderRewardBanner(){const c=cfg(),banner=document.getElementById('rewardBanner'),icon=document.getElementById('rewardIcon'),title=document.getElementById('rewardTitle'),sub=document.getElementById('rewardSub');const allGood=state.currentWeek.kids.every(k=>k.currentPoints>=c.jackpotThreshold);if(allGood){banner.className='reward-banner jackpot';icon.textContent='🏆';title.textContent=`JACKPOT! Everyone gets $${c.jackpotReward}!`;sub.textContent=`All kids have ${c.jackpotThreshold}+ points — amazing teamwork!`;}else{const notReady=state.currentWeek.kids.filter(k=>k.currentPoints<c.jackpotThreshold).map(k=>k.name);const earning=state.currentWeek.kids.filter(k=>k.currentPoints>=c.partialThreshold).length;banner.className='reward-banner partial';icon.textContent='💪';title.textContent=`No $${c.jackpotReward} yet — ${notReady.join(' & ')} need${notReady.length===1?'s':''} more points`;sub.textContent=earning===state.currentWeek.kids.length?`Everyone earns $${c.partialReward} for now. All need ${c.jackpotThreshold}+ to unlock $${c.jackpotReward}!`:`${earning} of ${state.currentWeek.kids.length} kids earning $${c.partialReward} — help each other for $${c.jackpotReward}!`;}}
+function renderSummary(){const c=cfg(),container=document.getElementById('summaryRows');const allJackpot=state.currentWeek.kids.every(k=>k.currentPoints>=c.jackpotThreshold);container.innerHTML=state.currentWeek.kids.map(kid=>{let payout,cls;if(allJackpot){payout=`$${c.jackpotReward}`;cls='payout-gold';}else if(kid.currentPoints>=c.partialThreshold){payout=`$${c.partialReward}`;cls='payout-green';}else{payout='$0';cls='payout-red';}return `<div class="summary-row"><span class="name">${kid.emoji} ${kid.name}</span><span class="payout ${cls}">${payout}</span></div>`;}).join('');}
+function buildChoreOptions(){return '<option value="">— Select a chore —</option>'+state.chores.map(ch=>`<option value="${ch.label}|${ch.pts}">${ch.label} (+${ch.pts} pt${ch.pts!==1?'s':''})</option>`).join('');}
+function renderKids(){
+  const grid=document.getElementById('kidsGrid');
+  const choreOpts=buildChoreOptions();
+  const c=cfg();
+  const allJackpot=state.currentWeek.kids.every(k=>k.currentPoints>=c.jackpotThreshold);
+  grid.innerHTML=state.currentWeek.kids.map((kid,i)=>{
+    const logEntries=getKidLog(i);
+    let payoutLabel,payoutCls;
+    if(allJackpot){payoutLabel=`🏆 $${c.jackpotReward} this week`;payoutCls='gold';}
+    else if(kid.currentPoints>=c.jackpotThreshold){payoutLabel=`⭐ Needs team for $${c.jackpotReward}`;payoutCls='green';}
+    else if(kid.currentPoints>=c.partialThreshold){payoutLabel=`💚 On track for $${c.partialReward}`;payoutCls='green';}
+    else{payoutLabel=`❌ No reward yet`;payoutCls='red';}
+    const logItems=logEntries.map(entry=>`<div class="log-item"><span class="log-badge ${entry.delta>0?'pos':entry.delta<0?'neg':'neu'}">${entry.delta>0?'+'+entry.delta:entry.delta===0?'📝':entry.delta}</span><span class="log-text">${entry.note||(entry.delta>0?'Points added':'Points removed')}</span><span class="log-time">${entry.time}</span><button class="log-del" onclick="deleteLog(${i},'${entry.id}',${entry.delta})">×</button></div>`).join('');
+    return `<div class="kid-card kid-${i%5}"><div class="kid-hero"><div class="kid-avatar">${kid.emoji}</div><div class="kid-identity"><div class="kid-name">${kid.name}</div><span class="kid-payout ${payoutCls}">${payoutLabel}</span></div><div class="kid-points-hero"><div class="points-num">${kid.currentPoints}</div><div class="points-label">pts</div></div></div><div style="height:1px;background:var(--border);margin:0 16px;"></div><div class="kid-actions"><button class="ctrl-btn btn-minus" onclick="addPoints(${i},-1)">−</button><button class="ctrl-btn btn-plus" onclick="addPoints(${i},1)">+</button><div class="chore-combo"><select class="chore-select" id="choreSelect${i}">${choreOpts}</select><button class="chore-log-btn" onclick="logChore(${i})">✓</button></div></div><div class="log-section"><button class="log-toggle" id="logToggle${i}" onclick="toggleLog(${i})">📋 Activity log (${logEntries.length}) <span class="arrow">▾</span></button><div id="logBody${i}" style="display:none"><div class="add-note-row"><input class="note-input" id="noteInput${i}" placeholder="Add a custom note…" onkeydown="if(event.key==='Enter')logNote(${i})"><button class="note-submit" onclick="logNote(${i})">Add</button></div><div class="log-list">${logItems||'<div class="no-log">No activity yet</div>'}</div></div></div></div>`;
+  }).join('');
+  document.getElementById('weekDate').textContent=formatDate(state.currentWeek.startDate);
+  renderRewardBanner();
+  renderSummary();
+}
+function addPoints(kidIdx,delta,note){const kid=state.currentWeek.kids[kidIdx];kid.currentPoints+=delta;const entry={delta,note:note||'',time:timeNow(),timestamp:Date.now()};if(!kid.log)kid.log={};const logId='log_'+Date.now();kid.log[logId]=entry;fbUpdate(`currentWeek/kids/${kidIdx}`,{currentPoints:kid.currentPoints,[`log/${logId}`]:entry});renderKids();restoreOpenLogs();showToast(`${kid.emoji} ${delta>0?'+'+delta:delta} point${Math.abs(delta)!==1?'s':''}!`);}
+function logChore(kidIdx){const sel=document.getElementById(`choreSelect${kidIdx}`);if(!sel.value){showToast('⚠️ Please select a chore first');return;}const[label,ptsStr]=sel.value.split('|');const pts=parseInt(ptsStr);sel.value='';addPoints(kidIdx,pts,label);}
+function logNote(kidIdx){const input=document.getElementById(`noteInput${kidIdx}`);const note=input.value.trim();if(!note)return;const kid=state.currentWeek.kids[kidIdx];const entry={delta:0,note,time:timeNow(),timestamp:Date.now()};if(!kid.log)kid.log={};const logId='log_'+Date.now();kid.log[logId]=entry;input.value='';fbUpdate(`currentWeek/kids/${kidIdx}/log`,{[logId]:entry});renderKids();restoreOpenLogs();openLog(kidIdx);}
+function deleteLog(kidIdx,logId,delta){const kid=state.currentWeek.kids[kidIdx];if(delta!==0)kid.currentPoints-=delta;delete kid.log[logId];fbUpdate(`currentWeek/kids/${kidIdx}`,{currentPoints:kid.currentPoints,log:kid.log});renderKids();restoreOpenLogs();}
+let openLogs=new Set();
+function toggleLog(i){openLogs.has(i)?(openLogs.delete(i),closeLog(i)):(openLogs.add(i),openLog(i));}
+function openLog(i){const b=document.getElementById(`logBody${i}`),t=document.getElementById(`logToggle${i}`);if(b)b.style.display='block';if(t)t.classList.add('open');openLogs.add(i);}
+function closeLog(i){const b=document.getElementById(`logBody${i}`),t=document.getElementById(`logToggle${i}`);if(b)b.style.display='none';if(t)t.classList.remove('open');}
+function restoreOpenLogs(){openLogs.forEach(i=>openLog(i));}
+function confirmNewWeek(){document.getElementById('modalOverlay').classList.add('show');}
+function newWeek(){closeModal('modalOverlay');const key=state.currentWeek.key||weekKey();state.currentWeek.endDate=new Date().toISOString();state.currentWeek.finalPayouts=buildPayouts();state.weeks[key]={...state.currentWeek};state.currentWeek=emptyWeek(cfg(),state.kids);fbUpdate('',{[`weeks/${key}`]:state.weeks[key],currentWeek:state.currentWeek});openLogs.clear();renderKids();showToast(`🎉 New week! Everyone starts with ${cfg().startPoints} points.`);}
+function buildPayouts(){const c=cfg(),allJackpot=state.currentWeek.kids.every(k=>k.currentPoints>=c.jackpotThreshold);return Object.fromEntries(state.currentWeek.kids.map((kid,i)=>{let payout;if(allJackpot)payout=c.jackpotReward;else payout=kid.currentPoints>=c.partialThreshold?c.partialReward:0;return['kid_'+i,{name:kid.name,payout,finalPoints:kid.currentPoints}];}));}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function promptWipeHistory(){closeSettings();document.getElementById('wipeHistoryModal1').classList.add('show');}
+function wipeHistoryConfirm2(){closeModal('wipeHistoryModal1');document.getElementById('wipeHistoryModal2').classList.add('show');}
+function wipeHistory(){closeModal('wipeHistoryModal2');state.weeks={};fbWrite('weeks',{});showToast('🗑️ Historical data wiped');}
+function promptWipeEverything(){closeSettings();document.getElementById('wipeAllModal1').classList.add('show');}
+function wipeAllConfirm2(){closeModal('wipeAllModal1');document.getElementById('wipeAllModal2').classList.add('show');}
+function wipeEverything(){closeModal('wipeAllModal2');state=freshState();localStorage.removeItem('familyPointsV4');if(db)db.ref('familyPoints').remove();openLogs.clear();renderKids();showToast('💥 Everything wiped. Fresh start!');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+let settingsKids=[],settingsChores=[],emojiTargetIdx=-1;
+function openSettings(){const c=cfg();document.getElementById('s_jackpotReward').value=c.jackpotReward;document.getElementById('s_partialReward').value=c.partialReward;document.getElementById('s_jackpotThreshold').value=c.jackpotThreshold;document.getElementById('s_partialThreshold').value=c.partialThreshold;document.getElementById('s_startPoints').value=c.startPoints;settingsKids=state.kids.map(k=>({...k}));settingsChores=state.chores.map(c=>({...c}));renderKidsEditor();renderChoresEditor();document.getElementById('settingsOverlay').classList.add('show');document.body.style.overflow='hidden';}
+function closeSettings(){document.getElementById('settingsOverlay').classList.remove('show');document.body.style.overflow='';closeEmojiPicker();}
+function handleSettingsOverlayClick(e){if(e.target===document.getElementById('settingsOverlay'))closeSettings();}
+function renderKidsEditor(){const editor=document.getElementById('kidsEditor');editor.innerHTML=settingsKids.map((kid,i)=>`<div class="kid-edit-row"><div class="kid-edit-emoji" onclick="openEmojiPicker(${i},event)">${kid.emoji}<span class="kid-edit-emoji-hint">tap to change</span></div><input class="kid-edit-name" type="text" value="${kid.name.replace(/"/g,'&quot;')}" oninput="settingsKids[${i}].name=this.value" placeholder="Child's name">${settingsKids.length>1?`<button class="kid-remove-btn" onclick="removeKidRow(${i})">−</button>`:''}</div>`).join('');document.getElementById('addKidBtn').style.display=settingsKids.length>=5?'none':'flex';}
+function addKidRow(){if(settingsKids.length>=5)return;const e=['🌟','🎯','🚀','💎','⚡'];settingsKids.push({name:`Child ${settingsKids.length+1}`,emoji:e[settingsKids.length]||'⭐'});renderKidsEditor();}
+function removeKidRow(i){settingsKids.splice(i,1);renderKidsEditor();}
+function buildEmojiGrid(){document.getElementById('emojiGrid').innerHTML=EMOJIS.map(e=>`<button class="emoji-opt" onclick="pickEmoji('${e}')">${e}</button>`).join('');}
+function openEmojiPicker(kidIdx,event){emojiTargetIdx=kidIdx;buildEmojiGrid();const picker=document.getElementById('emojiPicker');picker.classList.add('show');const rect=event.currentTarget.getBoundingClientRect();let left=rect.right+8,top=rect.top;if(left+280>window.innerWidth)left=rect.left-288;if(top+260>window.innerHeight)top=window.innerHeight-268;picker.style.left=Math.max(8,left)+'px';picker.style.top=Math.max(8,top)+'px';event.stopPropagation();}
+function pickEmoji(emoji){if(emojiTargetIdx>=0){settingsKids[emojiTargetIdx].emoji=emoji;renderKidsEditor();}closeEmojiPicker();}
+function closeEmojiPicker(){document.getElementById('emojiPicker').classList.remove('show');emojiTargetIdx=-1;}
+document.addEventListener('click',e=>{const p=document.getElementById('emojiPicker');if(p.classList.contains('show')&&!p.contains(e.target))closeEmojiPicker();});
+let dragSrcIdx=null;
+function renderChoresEditor(){document.getElementById('choresEditor').innerHTML=settingsChores.map((ch,i)=>`<div class="chore-edit-row" draggable="true" ondragstart="choreDragStart(event,${i})" ondragover="choreDragOver(event,${i})" ondragleave="choreDragLeave(event)" ondrop="choreDrop(event,${i})" ondragend="choreDragEnd()"><span class="drag-handle">☰</span><input class="chore-edit-name" type="text" value="${ch.label.replace(/"/g,'&quot;')}" oninput="settingsChores[${i}].label=this.value" placeholder="Chore name"><input class="chore-edit-pts" type="number" value="${ch.pts}" min="1" max="10" oninput="settingsChores[${i}].pts=parseInt(this.value)||1"><span class="chore-pts-label">pts</span><button class="chore-remove-btn" onclick="removeChoreRow(${i})">−</button></div>`).join('');}
+function addChoreRow(){settingsChores.push({label:'New chore',pts:1});renderChoresEditor();setTimeout(()=>{const ins=document.querySelectorAll('.chore-edit-name');if(ins.length)ins[ins.length-1].select();},50);}
+function removeChoreRow(i){settingsChores.splice(i,1);renderChoresEditor();}
+function choreDragStart(e,i){dragSrcIdx=i;e.dataTransfer.effectAllowed='move';e.currentTarget.style.opacity='0.4';}
+function choreDragOver(e,i){e.preventDefault();e.dataTransfer.dropEffect='move';if(i!==dragSrcIdx)e.currentTarget.classList.add('drag-over');}
+function choreDragLeave(e){e.currentTarget.classList.remove('drag-over');}
+function choreDrop(e,i){e.preventDefault();if(dragSrcIdx===null||dragSrcIdx===i)return;const m=settingsChores.splice(dragSrcIdx,1)[0];settingsChores.splice(i,0,m);renderChoresEditor();}
+function choreDragEnd(){dragSrcIdx=null;document.querySelectorAll('.chore-edit-row').forEach(r=>{r.style.opacity='';r.classList.remove('drag-over');});}
+function saveSettings(){const jackpotReward=parseInt(document.getElementById('s_jackpotReward').value);const partialReward=parseInt(document.getElementById('s_partialReward').value);const jackpotThreshold=parseInt(document.getElementById('s_jackpotThreshold').value);const partialThreshold=parseInt(document.getElementById('s_partialThreshold').value);const startPoints=parseInt(document.getElementById('s_startPoints').value);if([jackpotReward,partialReward,jackpotThreshold,partialThreshold,startPoints].some(isNaN)){showToast('⚠️ Please fill in all fields');return;}if(jackpotThreshold<=partialThreshold){showToast('⚠️ Jackpot threshold must be above minimum');return;}if(jackpotReward<partialReward){showToast('⚠️ Jackpot reward should be ≥ partial reward');return;}const validKids=settingsKids.filter(k=>k.name.trim());if(validKids.length===0){showToast('⚠️ Add at least one child');return;}const validChores=settingsChores.filter(c=>c.label.trim()&&c.pts>0);state.config={jackpotReward,partialReward,jackpotThreshold,partialThreshold,startPoints};state.chores=validChores;const oldKids=state.currentWeek.kids;state.kids=validKids;state.currentWeek.kids=validKids.map((k,i)=>{const existing=oldKids.find(o=>o.name===k.name);return existing?{...existing,emoji:k.emoji,name:k.name}:{name:k.name,emoji:k.emoji,startPoints,currentPoints:startPoints,log:{}};});const fbConfig={...state.config,kids:Object.fromEntries(state.kids.map((k,i)=>['kid_'+i,{name:k.name,emoji:k.emoji}])),chores:Object.fromEntries(state.chores.map((c,i)=>['chore_'+i,{...c}]))};fbWrite('config',fbConfig);fbWrite('currentWeek',state.currentWeek);closeSettings();renderKids();showToast('✅ Settings saved!');}
+initFirebase();
+renderKids();
+</script>
+</body>
+</html>
