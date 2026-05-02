@@ -1,94 +1,292 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>⭐ Our Points Board!</title>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
-  :root { --radius: 24px; }
+  :root {
+    --c0: #ff5722; --c1: #1976d2; --c2: #388e3c; --c3: #7b1fa2; --c4: #00838f;
+    --radius: 20px;
+    --gold: #ffd54f;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Nunito', sans-serif; min-height: 100vh; padding: 0 0 40px; background: #1a1a2e; overflow-x: hidden; }
-  .stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at 20% 50%, rgba(120,40,200,0.3) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(255,100,50,0.2) 0%, transparent 50%), radial-gradient(ellipse at 60% 80%, rgba(50,150,255,0.2) 0%, transparent 50%), #0f0f23; }
-  .star { position: absolute; border-radius: 50%; background: white; opacity: 0; animation: twinkle var(--d,3s) var(--delay,0s) infinite; }
-  @keyframes twinkle { 0%,100%{opacity:0;transform:scale(0.5);} 50%{opacity:var(--op,0.8);transform:scale(1);} }
-  .floaters { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-  .floater { position: absolute; font-size: var(--fs, 1.5rem); animation: float var(--d,8s) var(--delay,0s) infinite linear; opacity: 0.15; }
-  @keyframes float { 0%{transform:translateY(110vh) rotate(0deg);opacity:0;} 10%{opacity:0.15;} 90%{opacity:0.15;} 100%{transform:translateY(-10vh) rotate(360deg);opacity:0;} }
-  header { position: relative; z-index: 10; text-align: center; padding: 36px 20px 20px; }
-  .header-emoji { font-size: 4rem; display: block; animation: bounce 2s infinite; filter: drop-shadow(0 4px 12px rgba(255,200,0,0.6)); }
-  @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
-  header h1 { font-family: 'Baloo 2', cursive; font-size: 2.4rem; font-weight: 800; color: white; text-shadow: 0 0 30px rgba(255,200,50,0.8), 0 3px 12px rgba(0,0,0,0.5); margin-top: 8px; }
-  .week-label { color: rgba(255,255,255,0.7); font-size: 0.9rem; font-weight: 700; margin-top: 6px; letter-spacing: 0.04em; }
-  .jackpot-banner { position: relative; z-index: 10; margin: 0 16px 8px; border-radius: var(--radius); padding: 18px 20px; text-align: center; font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 1.15rem; transition: all 0.5s; }
-  .jackpot-banner.jackpot { background: linear-gradient(135deg, #f9a825, #ff6f00, #f9a825); background-size: 200% 200%; animation: shimmer 2s infinite, glow-gold 2s infinite; color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 3px solid #ffe082; }
-  .jackpot-banner.partial { background: linear-gradient(135deg, #1b5e20, #2e7d32); color: #b9f6ca; border: 3px solid #69f0ae; }
-  .jackpot-banner.none { background: linear-gradient(135deg, #4a0020, #880e4f); color: #f8bbd0; border: 3px solid #f48fb1; }
-  @keyframes shimmer { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
-  @keyframes glow-gold { 0%,100%{box-shadow:0 0 20px rgba(255,160,0,0.6),0 0 40px rgba(255,160,0,0.3);} 50%{box-shadow:0 0 40px rgba(255,200,0,0.9),0 0 80px rgba(255,200,0,0.5);} }
-  .banner-emoji { font-size: 1.8rem; display: block; margin-bottom: 4px; }
-  .banner-main { font-size: 1.2rem; }
-  .banner-sub { font-size: 0.85rem; font-family: 'Nunito', sans-serif; font-weight: 700; opacity: 0.85; margin-top: 4px; }
-  .kids-grid { position: relative; z-index: 10; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; padding: 16px; }
-  .kid-card { border-radius: var(--radius); padding: 28px 24px 24px; text-align: center; position: relative; overflow: hidden; transition: transform 0.3s; animation: cardIn 0.6s var(--delay, 0s) both; }
-  @keyframes cardIn { from{opacity:0;transform:translateY(30px) scale(0.95);} to{opacity:1;transform:translateY(0) scale(1);} }
-  .kid-card:hover { transform: translateY(-4px) scale(1.02); }
-  .kid-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%); pointer-events: none; }
-  .kid-0 { background: linear-gradient(160deg, #bf360c, #ff5722, #ff7043); border: 3px solid #ff8a65; box-shadow: 0 8px 32px rgba(255,87,34,0.5); }
-  .kid-1 { background: linear-gradient(160deg, #0d47a1, #1976d2, #42a5f5); border: 3px solid #64b5f6; box-shadow: 0 8px 32px rgba(66,165,245,0.5); }
-  .kid-2 { background: linear-gradient(160deg, #1b5e20, #388e3c, #66bb6a); border: 3px solid #81c784; box-shadow: 0 8px 32px rgba(102,187,106,0.5); }
-  .kid-3 { background: linear-gradient(160deg, #4a148c, #7b1fa2, #ab47bc); border: 3px solid #ce93d8; box-shadow: 0 8px 32px rgba(171,71,188,0.5); }
-  .kid-4 { background: linear-gradient(160deg, #006064, #00838f, #26c6da); border: 3px solid #80deea; box-shadow: 0 8px 32px rgba(38,198,218,0.5); }
-  .kid-avatar { width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 4px solid rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size: 3rem; margin: 0 auto 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); animation: avatarPop 0.5s var(--delay,0s) both; }
-  @keyframes avatarPop { from{transform:scale(0) rotate(-20deg);} to{transform:scale(1) rotate(0deg);} }
-  .kid-name { font-family: 'Baloo 2', cursive; font-size: 1.8rem; font-weight: 800; color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.3); margin-bottom: 16px; }
-  .points-bubble { width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 4px solid rgba(255,255,255,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 2px 8px rgba(255,255,255,0.2); }
-  .points-num { font-family: 'Baloo 2', cursive; font-size: 3.4rem; font-weight: 800; color: white; line-height: 1; text-shadow: 0 2px 12px rgba(0,0,0,0.3); }
-  .points-label { font-size: 0.65rem; font-weight: 800; color: rgba(255,255,255,0.8); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
-  .progress-wrap { margin: 0 0 14px; }
-  .progress-track { height: 14px; background: rgba(0,0,0,0.25); border-radius: 20px; overflow: hidden; border: 2px solid rgba(255,255,255,0.2); }
-  .progress-fill { height: 100%; border-radius: 20px; background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.9)); transition: width 1s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 10px rgba(255,255,255,0.5); }
-  .progress-labels { display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.7); }
-  .reward-badge { display: inline-block; padding: 10px 22px; border-radius: 50px; font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 800; border: 3px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); color: white; text-shadow: 0 1px 4px rgba(0,0,0,0.2); }
-  .reward-badge.jackpot-reward { background: linear-gradient(135deg, rgba(255,215,0,0.4), rgba(255,160,0,0.4)); border-color: #ffd54f; animation: pulse-badge 1.5s infinite; }
-  @keyframes pulse-badge { 0%,100%{box-shadow:0 0 10px rgba(255,215,0,0.4);} 50%{box-shadow:0 0 25px rgba(255,215,0,0.8);} }
-  .reward-badge.partial-reward { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); }
-  .reward-badge.no-reward { background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); }
-  .confetti-wrap { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
-  .confetti-piece { position: absolute; width: 10px; height: 10px; border-radius: 2px; animation: confettiFall var(--d,4s) var(--delay,0s) infinite linear; opacity: 0; }
-  @keyframes confettiFall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1;} 100%{transform:translateY(110vh) rotate(720deg);opacity:0;} }
-  .loading { position: relative; z-index: 10; text-align: center; padding: 80px 20px; color: rgba(255,255,255,0.7); }
-  .loading-spinner { font-size: 3rem; display: block; margin-bottom: 16px; animation: spin 1s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg);} }
-  .loading p { font-size: 1rem; font-weight: 700; }
-  footer { position: relative; z-index: 10; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.75rem; font-weight: 700; padding: 0 20px; margin-top: 8px; }
-  .debug-panel { position:relative; z-index:20; margin:12px 16px; padding:12px 16px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.2); border-radius:12px; color:#0f0; font-family:monospace; font-size:0.72rem; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow-y:auto; }
-  @media(max-width:480px){ header h1{font-size:1.8rem;} .kid-card{padding:22px 18px 20px;} .points-num{font-size:2.8rem;} .points-bubble{width:100px;height:100px;} }
+
+body {
+font-family: ‘Nunito’, sans-serif;
+min-height: 100vh;
+background: #0f0f23;
+overflow-x: hidden;
+padding-bottom: 32px;
+}
+
+/* ── Background ── */
+.bg {
+position: fixed; inset: 0; z-index: 0; pointer-events: none;
+background:
+radial-gradient(ellipse at 15% 40%, rgba(120,40,200,0.35) 0%, transparent 55%),
+radial-gradient(ellipse at 85% 15%, rgba(255,90,40,0.2) 0%, transparent 50%),
+radial-gradient(ellipse at 55% 85%, rgba(30,140,255,0.2) 0%, transparent 50%),
+#0f0f23;
+}
+.star { position: fixed; border-radius: 50%; background: #fff; opacity: 0; animation: twinkle var(–d,3s) var(–delay,0s) infinite; }
+@keyframes twinkle { 0%,100%{opacity:0;transform:scale(.5);} 50%{opacity:var(–op,.7);transform:scale(1);} }
+
+/* ── Header ── */
+header {
+position: relative; z-index: 10;
+text-align: center;
+padding: 28px 16px 16px;
+}
+.header-star { font-size: 2.8rem; display: block; animation: bob 2.2s ease-in-out infinite; filter: drop-shadow(0 3px 10px rgba(255,200,0,.7)); }
+@keyframes bob { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
+header h1 {
+font-family: ‘Baloo 2’, cursive; font-weight: 800;
+font-size: clamp(1.5rem, 5vw, 2rem);
+color: #fff;
+text-shadow: 0 0 24px rgba(255,200,50,.8), 0 2px 8px rgba(0,0,0,.5);
+margin-top: 4px;
+}
+.week-label {
+color: rgba(255,255,255,.55); font-size: 0.78rem; font-weight: 700;
+letter-spacing: .05em; margin-top: 4px;
+}
+
+/* ── Jackpot Banner ── */
+.jackpot-banner {
+position: relative; z-index: 10;
+margin: 0 12px 14px;
+border-radius: var(–radius);
+padding: 14px 16px;
+text-align: center;
+}
+.jackpot-banner.jackpot {
+background: linear-gradient(135deg, #f9a825, #ff6f00, #f9a825);
+background-size: 200% 200%;
+animation: shimmer 2s infinite, glow-gold 2s infinite;
+border: 2px solid #ffe082;
+color: #fff;
+}
+.jackpot-banner.partial {
+background: linear-gradient(135deg, rgba(30,80,30,.8), rgba(50,120,50,.8));
+border: 2px solid rgba(100,200,100,.4);
+color: #b9f6ca;
+}
+.jackpot-banner.none {
+background: linear-gradient(135deg, rgba(80,0,30,.8), rgba(140,20,80,.8));
+border: 2px solid rgba(200,100,140,.3);
+color: #f8bbd0;
+}
+@keyframes shimmer { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+@keyframes glow-gold { 0%,100%{box-shadow:0 0 16px rgba(255,160,0,.6);} 50%{box-shadow:0 0 36px rgba(255,200,0,.9);} }
+.banner-inner { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.banner-emoji { font-size: 1.6rem; }
+.banner-text strong { font-family: ‘Baloo 2’, cursive; font-weight: 800; font-size: 1rem; display: block; }
+.banner-text span { font-size: 0.75rem; font-weight: 700; opacity: .85; }
+
+/* ── Main Table Card ── */
+.table-card {
+position: relative; z-index: 10;
+margin: 0 12px;
+border-radius: var(–radius);
+background: rgba(255,255,255,0.05);
+border: 1px solid rgba(255,255,255,0.1);
+backdrop-filter: blur(12px);
+overflow: hidden;
+}
+
+/* ── Kid Header Row ── */
+.kid-headers {
+display: flex;
+border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.row-label-head {
+flex: 0 0 72px;
+min-width: 72px;
+/* spacer for the row labels column */
+}
+.kid-col {
+flex: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 16px 6px 12px;
+border-left: 1px solid rgba(255,255,255,0.07);
+animation: fadeUp .5s var(–delay, 0s) both;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+.kid-avatar {
+width: 52px; height: 52px; border-radius: 50%;
+display: flex; align-items: center; justify-content: center;
+font-size: 1.8rem;
+border: 3px solid;
+box-shadow: 0 4px 14px rgba(0,0,0,.4);
+margin-bottom: 6px;
+animation: pop .4s var(–delay, 0s) both;
+}
+@keyframes pop { from{transform:scale(0) rotate(-15deg);} to{transform:scale(1) rotate(0);} }
+.kid-col:nth-child(2) .kid-avatar { background: rgba(255,87,34,.25); border-color: #ff5722; }
+.kid-col:nth-child(3) .kid-avatar { background: rgba(25,118,210,.25); border-color: #1976d2; }
+.kid-col:nth-child(4) .kid-avatar { background: rgba(56,142,60,.25); border-color: #388e3c; }
+.kid-col:nth-child(5) .kid-avatar { background: rgba(123,31,162,.25); border-color: #7b1fa2; }
+.kid-col:nth-child(6) .kid-avatar { background: rgba(0,131,143,.25); border-color: #00838f; }
+.kid-name {
+font-family: ‘Baloo 2’, cursive; font-weight: 800;
+font-size: clamp(0.7rem, 3vw, 0.95rem);
+color: #fff;
+text-align: center;
+line-height: 1.1;
+}
+
+/* ── Data Rows ── */
+.data-row {
+display: flex;
+border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.data-row:last-child { border-bottom: none; }
+.row-label {
+flex: 0 0 72px; min-width: 72px;
+display: flex; align-items: center; justify-content: center;
+flex-direction: column;
+padding: 12px 4px;
+border-right: 1px solid rgba(255,255,255,0.07);
+gap: 3px;
+}
+.row-label .rl-icon { font-size: 1.1rem; }
+.row-label .rl-text {
+font-size: 0.58rem; font-weight: 800; letter-spacing: .05em;
+text-transform: uppercase; color: rgba(255,255,255,.45);
+text-align: center; line-height: 1.2;
+}
+
+.data-cell {
+flex: 1;
+display: flex; align-items: center; justify-content: center;
+flex-direction: column;
+padding: 12px 4px;
+border-left: 1px solid rgba(255,255,255,0.07);
+gap: 4px;
+animation: fadeUp .5s var(–delay, 0s) both;
+}
+
+/* Points row */
+.points-row .data-cell { padding: 14px 4px; }
+.pts-num {
+font-family: ‘Baloo 2’, cursive; font-weight: 800;
+font-size: clamp(1.6rem, 5vw, 2rem);
+color: #fff;
+line-height: 1;
+text-shadow: 0 2px 10px rgba(0,0,0,.4);
+}
+.pts-bar-wrap { width: 100%; padding: 0 4px; }
+.pts-bar-track {
+height: 6px; background: rgba(0,0,0,.3); border-radius: 10px;
+overflow: hidden; border: 1px solid rgba(255,255,255,.12);
+}
+.pts-bar-fill {
+height: 100%; border-radius: 10px;
+background: linear-gradient(90deg, rgba(255,255,255,.4), rgba(255,255,255,.9));
+transition: width 1.2s cubic-bezier(.4,0,.2,1);
+box-shadow: 0 0 8px rgba(255,255,255,.5);
+}
+/* Coloured fills */
+.kid-col:nth-child(2) ~ .data-row .data-cell:nth-child(2) .pts-bar-fill,
+.data-row .data-cell:nth-child(2) .pts-bar-fill { background: linear-gradient(90deg, #ff5722, #ff8a65); box-shadow: 0 0 8px rgba(255,87,34,.6); }
+.data-row .data-cell:nth-child(3) .pts-bar-fill { background: linear-gradient(90deg, #1976d2, #64b5f6); box-shadow: 0 0 8px rgba(25,118,210,.6); }
+.data-row .data-cell:nth-child(4) .pts-bar-fill { background: linear-gradient(90deg, #388e3c, #81c784); box-shadow: 0 0 8px rgba(56,142,60,.6); }
+.data-row .data-cell:nth-child(5) .pts-bar-fill { background: linear-gradient(90deg, #7b1fa2, #ce93d8); box-shadow: 0 0 8px rgba(123,31,162,.6); }
+.data-row .data-cell:nth-child(6) .pts-bar-fill { background: linear-gradient(90deg, #00838f, #80deea); box-shadow: 0 0 8px rgba(0,131,143,.6); }
+
+/* Payout row */
+.payout-badge {
+font-family: ‘Baloo 2’, cursive; font-weight: 800;
+font-size: clamp(1rem, 4vw, 1.25rem);
+border-radius: 50px;
+padding: 5px 10px;
+text-align: center;
+line-height: 1.2;
+}
+.payout-badge.jackpot {
+background: linear-gradient(135deg, rgba(255,213,0,.3), rgba(255,160,0,.3));
+border: 2px solid var(–gold);
+color: var(–gold);
+animation: pulse-gold 1.5s infinite;
+}
+@keyframes pulse-gold { 0%,100%{box-shadow:0 0 8px rgba(255,215,0,.3);} 50%{box-shadow:0 0 20px rgba(255,215,0,.7);} }
+.payout-badge.partial {
+background: rgba(255,255,255,.1);
+border: 2px solid rgba(255,255,255,.25);
+color: rgba(255,255,255,.8);
+}
+.payout-badge.none {
+background: rgba(0,0,0,.2);
+border: 2px solid rgba(255,255,255,.1);
+color: rgba(255,255,255,.4);
+font-size: 0.85rem;
+}
+
+/* Encouragement row */
+.encourage-row .data-cell {
+padding: 10px 6px;
+align-items: flex-start;
+}
+.encourage-text {
+font-size: clamp(0.62rem, 2.2vw, 0.75rem);
+font-weight: 700;
+color: rgba(255,255,255,.75);
+line-height: 1.4;
+text-align: center;
+}
+.encourage-icon { font-size: 1rem; }
+
+/* ── Loading ── */
+.loading { position: relative; z-index: 10; text-align: center; padding: 60px 20px; color: rgba(255,255,255,.6); }
+.loading-spinner { font-size: 2.5rem; display: block; animation: spin 1s linear infinite; margin-bottom: 12px; }
+@keyframes spin { to{transform:rotate(360deg);} }
+
+/* ── Confetti ── */
+.confetti-wrap { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
+.confetti-piece { position: absolute; border-radius: 2px; animation: confettiFall var(–d,4s) var(–delay,0s) infinite linear; opacity: 0; }
+@keyframes confettiFall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1;} 100%{transform:translateY(110vh) rotate(720deg);opacity:0;} }
+
+footer { position: relative; z-index: 10; text-align: center; color: rgba(255,255,255,.25); font-size: 0.7rem; font-weight: 700; padding: 20px 20px 0; }
 </style>
+
 </head>
 <body>
-<div class="stars" id="stars"></div>
-<div class="floaters" id="floaters"></div>
+
+<div class="bg" id="bg"></div>
 <div class="confetti-wrap" id="confettiWrap"></div>
+
 <header>
-  <span class="header-emoji">⭐</span>
+  <span class="header-star">⭐</span>
   <h1>Our Points Board!</h1>
-  <div class="week-label" id="weekLabel">Loading…</div>
+  <div class="week-label" id="weekLabel">Connecting…</div>
 </header>
+
 <div class="jackpot-banner none" id="jackpotBanner">
-  <span class="banner-emoji" id="bannerEmoji">⏳</span>
-  <div class="banner-main" id="bannerMain">Loading…</div>
-  <div class="banner-sub" id="bannerSub"></div>
+  <div class="banner-inner">
+    <span class="banner-emoji" id="bannerEmoji">⏳</span>
+    <div class="banner-text">
+      <strong id="bannerMain">Loading…</strong>
+      <span id="bannerSub"></span>
+    </div>
+  </div>
 </div>
+
 <div id="mainContent">
   <div class="loading">
     <span class="loading-spinner">⭐</span>
     <p>Loading your points…</p>
   </div>
 </div>
+
 <footer>Updates automatically • Read only 👀</footer>
+
 <script>
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCLMsal6EP0T8m6a9qaS79vaSiQAyzV4ag",
@@ -99,90 +297,271 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "746330750970",
   appId: "1:746330750970:web:a8dc2dcbc9c9460f81ee43"
 };
-const DEFAULT_CONFIG = {jackpotReward:10,partialReward:5,jackpotThreshold:5,partialThreshold:1,startPoints:5};
 
-function buildStars(){const wrap=document.getElementById('stars');for(let i=0;i<80;i++){const s=document.createElement('div');s.className='star';const size=Math.random()*3+1;s.style.cssText=`width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--delay:${Math.random()*5}s;--op:${0.4+Math.random()*0.6}`;wrap.appendChild(s);}}
-function buildFloaters(){const wrap=document.getElementById('floaters');const items=['⭐','🌟','✨','💫','🎉','🏆','💰','🎊','🌈','🎈'];for(let i=0;i<15;i++){const f=document.createElement('div');f.className='floater';f.textContent=items[Math.floor(Math.random()*items.length)];const size=1+Math.random()*1.5;f.style.cssText=`left:${Math.random()*100}%;--fs:${size}rem;--d:${6+Math.random()*8}s;--delay:${Math.random()*8}s`;wrap.appendChild(f);}}
-function buildConfetti(active){const wrap=document.getElementById('confettiWrap');wrap.innerHTML='';if(!active)return;const colours=['#ffd54f','#ff7043','#42a5f5','#66bb6a','#ab47bc','#26c6da','#fff'];for(let i=0;i<60;i++){const c=document.createElement('div');c.className='confetti-piece';c.style.cssText=`left:${Math.random()*100}%;background:${colours[Math.floor(Math.random()*colours.length)]};--d:${3+Math.random()*4}s;--delay:${Math.random()*4}s;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;border-radius:${Math.random()>0.5?'50%':'2px'}`;wrap.appendChild(c);}}
-function formatDate(iso){return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});}
-function debug(msg){console.log(msg);const p=document.getElementById('debugPanel');if(p)p.textContent=(p.textContent+'\n'+msg).split('\n').slice(-20).join('\n');}
+const DEFAULT_CONFIG = {
+  jackpotReward: 10,
+  partialReward: 5,
+  jackpotThreshold: 5,
+  partialThreshold: 1,
+  startPoints: 5
+};
 
-function render(data){
-  debug('render() called, keys: '+(data?Object.keys(data).join(', '):'NULL'));
-  const config={...DEFAULT_CONFIG};
-  let kids=[];
-  let currentWeek=null;
-  if(data){
-    if(data.config){
-      const{kids:kidsObj,chores,...cfg}=data.config;
-      Object.assign(config,cfg);
-      if(kidsObj){kids=Object.entries(kidsObj).sort((a,b)=>a[0].localeCompare(b[0])).map(([,v])=>v);}
-    }
-    if(data.currentWeek)currentWeek=data.currentWeek;
+// ── Stars ───────────────────────────────────────────
+function buildStars() {
+  const bg = document.getElementById('bg');
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.8;
+    s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;position:fixed;--d:${2+Math.random()*4}s;--delay:${Math.random()*5}s;--op:${0.3+Math.random()*0.6}`;
+    bg.appendChild(s);
   }
-  let weekKids=[];
-  if(currentWeek&&currentWeek.kids){
-    if(Array.isArray(currentWeek.kids)){weekKids=currentWeek.kids;}
-    else{weekKids=Object.entries(currentWeek.kids).sort((a,b)=>Number(a[0])-Number(b[0])).map(([,v])=>v);}
-  }
-  debug('weekKids: '+weekKids.length+', kids from config: '+kids.length);
-  const mergedKids=weekKids.map((wk,i)=>({...wk,emoji:wk.emoji||kids[i]&&kids[i].emoji||'⭐',name:wk.name||kids[i]&&kids[i].name||('Child '+(i+1))}));
-  if(currentWeek&&currentWeek.startDate){document.getElementById('weekLabel').textContent='Week of '+formatDate(currentWeek.startDate);}
-  const allJackpot=mergedKids.length>0&&mergedKids.every(k=>k.currentPoints>=config.jackpotThreshold);
-  const banner=document.getElementById('jackpotBanner');
-  const bannerEmoji=document.getElementById('bannerEmoji');
-  const bannerMain=document.getElementById('bannerMain');
-  const bannerSub=document.getElementById('bannerSub');
-  if(allJackpot){banner.className='jackpot-banner jackpot';bannerEmoji.textContent='🏆';bannerMain.textContent='JACKPOT! Everyone gets $'+config.jackpotReward+'!';bannerSub.textContent='Amazing teamwork — you all did it! 🎉';buildConfetti(true);}
-  else{const notReady=mergedKids.filter(k=>k.currentPoints<config.jackpotThreshold).map(k=>k.name);banner.className='jackpot-banner partial';bannerEmoji.textContent='💪';bannerMain.textContent=notReady.join(' & ')+' — keep it up!';bannerSub.textContent='Everyone needs '+config.jackpotThreshold+' pts for $'+config.jackpotReward+' each!';buildConfetti(false);}
-  const grid=document.createElement('div');
-  grid.className='kids-grid';
-  mergedKids.forEach((kid,i)=>{
-    const pts=kid.currentPoints!=null?kid.currentPoints:config.startPoints;
-    const pct=Math.min(100,Math.round((pts/config.jackpotThreshold)*100));
-    let rewardLabel,rewardCls;
-    if(allJackpot){rewardLabel='🏆 $'+config.jackpotReward+' this week!';rewardCls='jackpot-reward';}
-    else if(pts>=config.jackpotThreshold){rewardLabel='⭐ '+pts+' pts — needs team for $'+config.jackpotReward;rewardCls='partial-reward';}
-    else if(pts>=config.partialThreshold){rewardLabel='💚 On track for $'+config.partialReward;rewardCls='partial-reward';}
-    else{rewardLabel='❌ Need more points!';rewardCls='no-reward';}
-    const card=document.createElement('div');
-    card.className='kid-card kid-'+(i%5);
-    card.style.setProperty('--delay',(i*0.15)+'s');
-    card.innerHTML='<div class="kid-avatar">'+kid.emoji+'</div><div class="kid-name">'+kid.name+'</div><div class="points-bubble"><div class="points-num">'+pts+'</div><div class="points-label">points</div></div><div class="progress-wrap"><div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div><div class="progress-labels"><span>0</span><span>Goal: '+config.jackpotThreshold+' pts</span></div></div><div class="reward-badge '+rewardCls+'">'+rewardLabel+'</div>';
-    grid.appendChild(card);
-  });
-  const main=document.getElementById('mainContent');
-  main.innerHTML='';
-  main.appendChild(grid);
 }
 
-function init(){
+// ── Confetti ─────────────────────────────────────────
+function buildConfetti(active) {
+  const wrap = document.getElementById('confettiWrap');
+  wrap.innerHTML = '';
+  if (!active) return;
+  const colours = ['#ffd54f','#ff7043','#42a5f5','#66bb6a','#ab47bc','#26c6da','#fff'];
+  for (let i = 0; i < 50; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti-piece';
+    c.style.cssText = `left:${Math.random()*100}%;background:${colours[Math.floor(Math.random()*colours.length)]};--d:${3+Math.random()*4}s;--delay:${Math.random()*4}s;width:${6+Math.random()*7}px;height:${5+Math.random()*6}px;border-radius:${Math.random()>.5?'50%':'2px'}`;
+    wrap.appendChild(c);
+  }
+}
+
+// ── Encouragement generator ───────────────────────────
+function getEncouragement(kid, config, allJackpot) {
+  const pts = kid.currentPoints != null ? kid.currentPoints : config.startPoints;
+  const goal = config.jackpotThreshold;
+  const needed = goal - pts;
+  const pct = pts / goal;
+
+  // Try to reference recent chores from kid data
+  const recentChores = kid.chores
+    ? (Array.isArray(kid.chores) ? kid.chores : Object.values(kid.chores))
+        .filter(c => c && c.completed)
+        .map(c => c.name || c.title || '').filter(Boolean).slice(-2)
+    : [];
+
+  if (allJackpot || pts >= goal) {
+    return { icon: '🏆', text: 'Amazing job! You hit your goal!' };
+  }
+
+  if (pct >= 0.8) {
+    const chore = recentChores[0];
+    return { icon: '🔥', text: chore ? `So close! Keep up the ${chore} work — just ${needed} more pt${needed!==1?'s':''}!` : `Almost there! Just ${needed} more pt${needed!==1?'s':''}!` };
+  }
+
+  if (pct >= 0.5) {
+    const chore = recentChores[0];
+    return { icon: '💪', text: chore ? `Great ${chore}! Halfway there — ${needed} pts to go for $${config.jackpotReward}!` : `Over halfway! ${needed} pts left for $${config.jackpotReward}!` };
+  }
+
+  if (pts > 0) {
+    return { icon: '⭐', text: `Good start! Earn ${needed} more pt${needed!==1?'s':''} for $${config.jackpotReward} — chores help!` };
+  }
+
+  return { icon: '🌟', text: `Do some chores to start earning toward $${config.jackpotReward}!` };
+}
+
+// ── Format date ───────────────────────────────────────
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// ── Render ────────────────────────────────────────────
+function render(data) {
+  const config = { ...DEFAULT_CONFIG };
+  let kids = [];
+  let currentWeek = null;
+
+  if (data) {
+    if (data.config) {
+      const { kids: kidsObj, chores, ...cfg } = data.config;
+      Object.assign(config, cfg);
+      if (kidsObj) {
+        kids = Object.entries(kidsObj)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([, v]) => v);
+      }
+    }
+    if (data.currentWeek) currentWeek = data.currentWeek;
+  }
+
+  let weekKids = [];
+  if (currentWeek && currentWeek.kids) {
+    weekKids = Array.isArray(currentWeek.kids)
+      ? currentWeek.kids
+      : Object.entries(currentWeek.kids)
+          .sort((a, b) => Number(a[0]) - Number(b[0]))
+          .map(([, v]) => v);
+  }
+
+  const mergedKids = weekKids.map((wk, i) => ({
+    ...wk,
+    emoji: wk.emoji || (kids[i] && kids[i].emoji) || '⭐',
+    name: wk.name || (kids[i] && kids[i].name) || ('Child ' + (i + 1))
+  }));
+
+  if (currentWeek && currentWeek.startDate) {
+    document.getElementById('weekLabel').textContent = 'Week of ' + formatDate(currentWeek.startDate);
+  }
+
+  const allJackpot = mergedKids.length > 0 && mergedKids.every(k => (k.currentPoints != null ? k.currentPoints : config.startPoints) >= config.jackpotThreshold);
+
+  // Banner
+  const banner = document.getElementById('jackpotBanner');
+  if (allJackpot) {
+    banner.className = 'jackpot-banner jackpot';
+    document.getElementById('bannerEmoji').textContent = '🏆';
+    document.getElementById('bannerMain').textContent = 'JACKPOT! Everyone gets $' + config.jackpotReward + '!';
+    document.getElementById('bannerSub').textContent = 'Incredible teamwork — you all crushed it! 🎉';
+    buildConfetti(true);
+  } else {
+    const notReady = mergedKids.filter(k => (k.currentPoints != null ? k.currentPoints : config.startPoints) < config.jackpotThreshold).map(k => k.name);
+    banner.className = 'jackpot-banner partial';
+    document.getElementById('bannerEmoji').textContent = '💪';
+    document.getElementById('bannerMain').textContent = notReady.join(' & ') + ' — keep going!';
+    document.getElementById('bannerSub').textContent = 'Everyone needs ' + config.jackpotThreshold + ' pts for $' + config.jackpotReward + ' each!';
+    buildConfetti(false);
+  }
+
+  // Build table
+  const card = document.createElement('div');
+  card.className = 'table-card';
+
+  // ── Header row (kid names + avatars) ────────────────
+  const headerRow = document.createElement('div');
+  headerRow.className = 'kid-headers';
+
+  // spacer
+  const spacer = document.createElement('div');
+  spacer.className = 'row-label-head';
+  headerRow.appendChild(spacer);
+
+  mergedKids.forEach((kid, i) => {
+    const col = document.createElement('div');
+    col.className = 'kid-col';
+    col.style.setProperty('--delay', (i * 0.1) + 's');
+    col.innerHTML = `<div class="kid-avatar">${kid.emoji}</div><div class="kid-name">${kid.name}</div>`;
+    headerRow.appendChild(col);
+  });
+  card.appendChild(headerRow);
+
+  // ── Points row ───────────────────────────────────────
+  const pointsRow = document.createElement('div');
+  pointsRow.className = 'data-row points-row';
+
+  const pointsLabel = document.createElement('div');
+  pointsLabel.className = 'row-label';
+  pointsLabel.innerHTML = '<span class="rl-icon">⭐</span><span class="rl-text">Points</span>';
+  pointsRow.appendChild(pointsLabel);
+
+  mergedKids.forEach((kid, i) => {
+    const pts = kid.currentPoints != null ? kid.currentPoints : config.startPoints;
+    const pct = Math.min(100, Math.round((pts / config.jackpotThreshold) * 100));
+    const cell = document.createElement('div');
+    cell.className = 'data-cell';
+    cell.style.setProperty('--delay', (i * 0.1 + 0.2) + 's');
+    cell.innerHTML = `
+      <div class="pts-num">${pts}</div>
+      <div class="pts-bar-wrap">
+        <div class="pts-bar-track">
+          <div class="pts-bar-fill" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+    pointsRow.appendChild(cell);
+  });
+  card.appendChild(pointsRow);
+
+  // ── Payout row ───────────────────────────────────────
+  const payoutRow = document.createElement('div');
+  payoutRow.className = 'data-row payout-row';
+
+  const payoutLabel = document.createElement('div');
+  payoutLabel.className = 'row-label';
+  payoutLabel.innerHTML = '<span class="rl-icon">💰</span><span class="rl-text">Payout</span>';
+  payoutRow.appendChild(payoutLabel);
+
+  mergedKids.forEach((kid, i) => {
+    const pts = kid.currentPoints != null ? kid.currentPoints : config.startPoints;
+    const cell = document.createElement('div');
+    cell.className = 'data-cell';
+    cell.style.setProperty('--delay', (i * 0.1 + 0.3) + 's');
+
+    let badgeCls, badgeText;
+    if (allJackpot) {
+      badgeCls = 'jackpot'; badgeText = '$' + config.jackpotReward + ' 🏆';
+    } else if (pts >= config.jackpotThreshold) {
+      badgeCls = 'partial'; badgeText = '$' + config.jackpotReward + ' ✓';
+    } else if (pts >= config.partialThreshold) {
+      badgeCls = 'partial'; badgeText = '$' + config.partialReward;
+    } else {
+      badgeCls = 'none'; badgeText = 'Keep going';
+    }
+
+    cell.innerHTML = `<div class="payout-badge ${badgeCls}">${badgeText}</div>`;
+    payoutRow.appendChild(cell);
+  });
+  card.appendChild(payoutRow);
+
+  // ── Encouragement row ────────────────────────────────
+  const encourageRow = document.createElement('div');
+  encourageRow.className = 'data-row encourage-row';
+
+  const encourageLabel = document.createElement('div');
+  encourageLabel.className = 'row-label';
+  encourageLabel.innerHTML = '<span class="rl-icon">💬</span><span class="rl-text">Tip</span>';
+  encourageRow.appendChild(encourageLabel);
+
+  mergedKids.forEach((kid, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'data-cell';
+    cell.style.setProperty('--delay', (i * 0.1 + 0.4) + 's');
+    const enc = getEncouragement(kid, config, allJackpot);
+    cell.innerHTML = `<span class="encourage-icon">${enc.icon}</span><div class="encourage-text">${enc.text}</div>`;
+    encourageRow.appendChild(cell);
+  });
+  card.appendChild(encourageRow);
+
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '';
+  main.appendChild(card);
+}
+
+// ── Init ──────────────────────────────────────────────
+function init() {
   buildStars();
-  buildFloaters();
-  debug('Initialising Firebase…');
-  try{
+  try {
     firebase.initializeApp(FIREBASE_CONFIG);
-    const db=firebase.database();
-    debug('Firebase initialised, listening…');
-    document.getElementById('weekLabel').textContent='Connecting…';
-    db.ref('familyPoints').on('value',function(snap){
-      const data=snap.val();
-      debug('Got snapshot. Keys: '+(data?Object.keys(data).join(', '):'NULL'));
-      if(!data){document.getElementById('mainContent').innerHTML='<div class="loading"><span>📭</span><p>No data yet.<br>Open the parent app first.</p></div>';document.getElementById('weekLabel').textContent='No data yet';return;}
-      if(!data.currentWeek){document.getElementById('mainContent').innerHTML='<div class="loading"><span>📭</span><p>No current week.<br>Tap New Week in the parent app.</p></div>';return;}
+    const db = firebase.database();
+    document.getElementById('weekLabel').textContent = 'Connecting…';
+
+    db.ref('familyPoints').on('value', function(snap) {
+      const data = snap.val();
+      if (!data) {
+        document.getElementById('mainContent').innerHTML = '<div class="loading"><span>📭</span><p>No data yet.<br>Open the parent app first.</p></div>';
+        document.getElementById('weekLabel').textContent = 'No data yet';
+        return;
+      }
+      if (!data.currentWeek) {
+        document.getElementById('mainContent').innerHTML = '<div class="loading"><span>📭</span><p>No current week.<br>Tap New Week in the parent app.</p></div>';
+        return;
+      }
       render(data);
-    },function(err){
-      debug('Firebase error: '+err.message);
-      document.getElementById('mainContent').innerHTML='<div class="loading"><span>😕</span><p>Error: '+err.message+'</p></div>';
+    }, function(err) {
+      document.getElementById('mainContent').innerHTML = '<div class="loading"><span>😕</span><p>Error: ' + err.message + '</p></div>';
     });
-    db.ref('.info/connected').on('value',function(snap){debug('Connected: '+snap.val());});
-  }catch(e){
-    debug('Init failed: '+e.message);
-    document.getElementById('mainContent').innerHTML='<div class="loading"><span>😕</span><p>Init error: '+e.message+'</p></div>';
+  } catch(e) {
+    document.getElementById('mainContent').innerHTML = '<div class="loading"><span>😕</span><p>Init error: ' + e.message + '</p></div>';
   }
 }
 
 init();
 </script>
+
 </body>
 </html>
