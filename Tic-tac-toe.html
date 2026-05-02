@@ -19,7 +19,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
+            overflow-x: hidden;
+            padding-bottom: 100px;
         }
 
         body::before {
@@ -39,6 +40,9 @@
         .container {
             text-align: center;
             animation: slideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
         }
 
         @keyframes slideIn {
@@ -54,46 +58,47 @@
 
         h1 {
             font-family: 'Fredoka', sans-serif;
-            font-size: 3.5rem;
+            font-size: 2.5rem;
             color: white;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
             text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             letter-spacing: 2px;
         }
 
         .subtitle {
             color: rgba(255, 255, 255, 0.9);
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
             font-weight: 400;
         }
 
         .game-wrapper {
             display: flex;
-            gap: 2rem;
+            flex-direction: column;
+            gap: 1.5rem;
             justify-content: center;
-            flex-wrap: wrap;
-            align-items: flex-start;
+            align-items: center;
+            width: 100%;
         }
 
         .board {
             display: grid;
-            grid-template-columns: repeat(3, 100px);
-            gap: 12px;
+            grid-template-columns: repeat(3, 80px);
+            gap: 10px;
             background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
+            padding: 15px;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
         }
 
         .cell {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
             border-radius: 15px;
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
             color: white;
             cursor: pointer;
@@ -136,18 +141,19 @@
 
         .info-panel {
             background: rgba(255, 255, 255, 0.95);
-            padding: 25px;
+            padding: 20px;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            min-width: 200px;
+            width: 100%;
+            max-width: 320px;
             backdrop-filter: blur(10px);
         }
 
         .status {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 600;
             color: #333;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.2rem;
             min-height: 1.5em;
         }
 
@@ -161,7 +167,7 @@
 
         .status.winner {
             color: #2ECC71;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             animation: pulse 0.6s ease-in-out;
         }
 
@@ -178,12 +184,12 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-bottom: 1.5rem;
-            font-size: 0.95rem;
+            margin-bottom: 1.2rem;
+            font-size: 0.9rem;
         }
 
         .score-item {
-            padding: 12px;
+            padding: 10px;
             border-radius: 12px;
             font-weight: 600;
         }
@@ -201,12 +207,12 @@
         .buttons {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
         button {
             padding: 12px 24px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             border: none;
             border-radius: 12px;
@@ -233,7 +239,7 @@
         .clear-score-btn {
             background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
             color: white;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
         }
 
@@ -244,30 +250,6 @@
 
         .clear-score-btn:active {
             transform: translateY(0);
-        }
-
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 2.5rem;
-            }
-
-            .game-wrapper {
-                flex-direction: column;
-                gap: 1.5rem;
-            }
-
-            .board {
-                grid-template-columns: repeat(3, 80px);
-                gap: 10px;
-                padding: 15px;
-            }
-
-            .cell {
-                width: 80px;
-                height: 80px;
-                font-size: 2rem;
-                border-radius: 12px;
-            }
         }
     </style>
 </head>
