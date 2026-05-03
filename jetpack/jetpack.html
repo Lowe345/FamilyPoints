@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jetpack Blitz</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #05080f;
+      font-family: 'Exo 2', sans-serif;
+      color: #c8e0ff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 8px 20px;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(16px, 3.5vw, 26px);
+      font-weight: 900;
+      color: #00d4ff;
+      text-shadow: 0 0 20px #00d4ff88, 0 0 40px #00d4ff44;
+      letter-spacing: 4px;
+      margin-bottom: 3px;
+    }
+
+    .subtitle { font-size: 12px; color: #4a7090; letter-spacing: 2px; margin-bottom: 10px; }
+
+    /* ── Test banner ── */
+    #test-banner {
+      font-size: 11px; padding: 4px 12px; border-radius: 6px;
+      margin-bottom: 8px; font-family: monospace; display: none;
+    }
+    #test-banner.pass { background: #0a2a0a; color: #40c040; display: block; }
+    #test-banner.fail { background: #2a0808; color: #f05050; display: block; }
+
+    /* ── Screens ── */
+    #screen-menu, #screen-game, #screen-over {
+      display: none; width: 100%; max-width: 620px;
+      flex-direction: column; align-items: center;
+    }
+    #screen-menu.active, #screen-game.active, #screen-over.active { display: flex; }
+
+    /* ── Menu ── */
+    .menu-art { width: 100%; max-width: 400px; height: 120px; margin-bottom: 18px; }
+
+    .mode-title {
+      font-family: 'Orbitron', monospace; font-size: 11px;
+      color: #4a7090; letter-spacing: 3px; margin-bottom: 12px;
+    }
+
+    .mode-cards {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; width: 100%; margin-bottom: 20px;
+    }
+
+    .mode-card {
+      background: #080f1a; border: 1.5px solid #1a3050; border-radius: 10px;
+      padding: 14px 8px; cursor: pointer; text-align: center;
+      transition: border-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+    .mode-card:hover    { border-color: #00d4ff; transform: translateY(-2px); box-shadow: 0 4px 20px #00d4ff22; }
+    .mode-card.selected { border-color: #00d4ff; background: #0a1828; box-shadow: 0 0 16px #00d4ff33; }
+    .mode-card .icon { font-size: 24px; margin-bottom: 6px; }
+    .mode-card .name { font-family: 'Orbitron', monospace; font-size: 11px; color: #c8e0ff; font-weight: 700; }
+    .mode-card .desc { font-size: 10px; color: #3a5070; margin-top: 4px; line-height: 1.4; }
+
+    .btn-play {
+      background: linear-gradient(135deg, #003a5a, #006090);
+      border: 2px solid #00d4ff; color: #00d4ff;
+      font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700;
+      padding: 12px 40px; border-radius: 8px; cursor: pointer; letter-spacing: 3px;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 0 20px #00d4ff33;
+    }
+    .btn-play:hover {
+      background: linear-gradient(135deg, #005080, #0090c0);
+      transform: scale(1.03); box-shadow: 0 0 30px #00d4ff55;
+    }
+
+    .controls-hint { font-size: 11px; color: #2a4060; margin-top: 14px; line-height: 1.9; text-align: center; }
+
+    /* ── HUD ── */
+    #hud {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; max-width: 620px; padding: 6px 12px;
+      background: #080f1a; border: 1px solid #1a3050; border-radius: 8px;
+      margin-bottom: 8px; gap: 8px; flex-wrap: wrap;
+    }
+    .hud-item { display: flex; align-items: center; gap: 5px; }
+    .hud-label { color: #3a6080; font-size: 10px; font-family: 'Orbitron', monospace; letter-spacing: 1px; }
+    .hud-val   { color: #00d4ff; font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700; }
+    .hud-val.coins { color: #ffd060; }
+    .hud-val.mode-badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; }
+    .badge-easy   { background: #0a2a0a; color: #40c080; border: 1px solid #208050; }
+    .badge-normal { background: #1a1a0a; color: #d0b040; border: 1px solid #806020; }
+    .badge-hard   { background: #2a0808; color: #f05050; border: 1px solid #803020; }
+    #powerup-hud  { font-size: 11px; color: #ff80ff; min-width: 80px; }
+
+    /* ── Canvas ── */
+    #game-canvas {
+      border: 1.5px solid #1a3050; border-radius: 8px; image-rendering: pixelated;
+      max-width: 100%; display: block; box-shadow: 0 0 30px #00d4ff11;
+      touch-action: none; cursor: pointer;
+    }
+
+    /* ── Touch thrust button ── */
+    #touch-btn {
+      margin-top: 12px; width: 100px; height: 60px;
+      background: #0a1828; border: 2px solid #1a4070; border-radius: 12px;
+      color: #4a90c0; font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 1px;
+      cursor: pointer; user-select: none; -webkit-user-select: none;
+      transition: background 0.1s, border-color 0.1s;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    }
+    #touch-btn.held  { background: #0a2840; border-color: #00d4ff; color: #00d4ff; }
+    #touch-btn-icon  { font-size: 20px; }
+
+    /* ── Game-over / end screen ── */
+    .end-glow {
+      font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 900;
+      letter-spacing: 3px; margin: 16px 0 6px;
+    }
+    .end-glow.dead { color: #f05050; text-shadow: 0 0 20px #f0505088; }
+
+    .end-sub { font-size: 13px; color: #4a7090; margin-bottom: 18px; text-align: center; }
+
+    .end-stats {
+      background: #080f1a; border: 1px solid #1a3050; border-radius: 10px;
+      padding: 14px 28px; margin-bottom: 20px; text-align: center;
+      width: 100%; max-width: 300px;
+    }
+    .end-stats p    { font-size: 12px; color: #3a6080; margin: 5px 0; }
+    .end-stats span { color: #00d4ff; font-weight: 600; font-family: 'Orbitron', monospace; }
+    .end-stats .gold { color: #ffd060; }
+
+    .highscore-line { font-family: 'Orbitron', monospace; font-size: 11px; color: #ff80ff; margin-bottom: 8px; }
+
+    .over-btn-row { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+  </style>
+</head>
+<body>
+
+<h1>⚡ JETPACK BLITZ ⚡</h1>
+<p class="subtitle">HOLD TO FLY · SURVIVE · COLLECT COINS</p>
+<div id="test-banner"></div>
+
+<!-- ── MENU SCREEN ── -->
+<div id="screen-menu" class="active">
+  <canvas class="menu-art" id="menu-canvas" width="400" height="120"></canvas>
+  <p class="mode-title">SELECT DIFFICULTY</p>
+  <div class="mode-cards">
+    <div class="mode-card" data-mode="easy" onclick="UI.selectMode('easy', this)">
+      <div class="icon">🌊</div>
+      <div class="name">EASY</div>
+      <div class="desc">Gentle obstacles. Wide gaps. Learn the ropes.</div>
+    </div>
+    <div class="mode-card selected" data-mode="normal" onclick="UI.selectMode('normal', this)">
+      <div class="icon">⚡</div>
+      <div class="name">NORMAL</div>
+      <div class="desc">Balanced challenge. Lasers, missiles &amp; spikes.</div>
+    </div>
+    <div class="mode-card" data-mode="hard" onclick="UI.selectMode('hard', this)">
+      <div class="icon">💀</div>
+      <div class="name">HARD</div>
+      <div class="desc">Chaos mode. Everything is faster and meaner.</div>
+    </div>
+  </div>
+  <button class="btn-play" onclick="Game.start()">LAUNCH ⚡</button>
+  <p class="controls-hint">
+    SPACE / Click the canvas / Tap THRUST to fire jetpack<br>
+    Hold to climb · Release to fall · Press once to begin!
+  </p>
+</div>
+
+<!-- ── GAME SCREEN ── -->
+<div id="screen-game">
+  <div id="hud">
+    <div class="hud-item">
+      <span class="hud-label">DIST</span>
+      <span class="hud-val" id="hud-dist">0m</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-val mode-badge" id="hud-mode">NORMAL</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">COINS</span>
+      <span class="hud-val coins" id="hud-coins">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">PWR</span>
+      <span id="powerup-hud">—</span>
+    </div>
+  </div>
+  <canvas id="game-canvas"></canvas>
+  <div id="touch-btn"
+       onpointerdown="Input.thrustStart()" onpointerup="Input.thrustStop()"
+       ontouchstart="Input.thrustStart()" ontouchend="Input.thrustStop()">
+    <div id="touch-btn-icon">🚀</div>
+    <div>THRUST</div>
+  </div>
+</div>
+
+<!-- ── GAME OVER SCREEN ── -->
+<div id="screen-over">
+  <div class="end-glow dead">CRASHED!</div>
+  <div class="end-sub" id="over-sub"></div>
+  <div class="highscore-line" id="over-hs"></div>
+  <div class="end-stats" id="over-stats"></div>
+  <div class="over-btn-row">
+    <button class="btn-play" onclick="Game.restart()">RETRY ⚡</button>
+    <button class="btn-play" style="font-size:12px;padding:10px 30px" onclick="Game.returnToMenu()">← MENU</button>
+  </div>
+</div>
+
+<!-- ── Scripts — order matches dependency graph ── -->
+<script src="config.js"></script>
+<script src="physics.js"></script>
+<script src="state.js"></script>
+<script src="spawner.js"></script>
+<script src="collision.js"></script>
+<script src="renderer.js"></script>
+<script src="input.js"></script>
+<script src="ui.js"></script>
+<script src="game.js"></script>
+<script src="tests.js"></script>
+<script src="main.js"></script>
+
+</body>
+</html>
