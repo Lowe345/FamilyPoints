@@ -22,6 +22,28 @@
   header p{color:rgba(255,255,255,0.85);font-size:0.9rem;margin-top:4px;position:relative;}
   .settings-btn{position:absolute;top:20px;right:18px;background:rgba(255,255,255,0.2);border:none;border-radius:12px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:white;transition:background 0.2s;z-index:2;}
   .settings-btn:hover{background:rgba(255,255,255,0.35);}
+  .nav-btn{position:absolute;top:20px;left:18px;background:rgba(255,255,255,0.2);border:none;border-radius:12px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:white;transition:background 0.2s;z-index:2;}
+  .nav-btn:hover{background:rgba(255,255,255,0.35);}
+  /* ── Nav overlay — mirrors settings overlay ── */
+  .nav-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s;display:flex;justify-content:flex-start;}
+  .nav-overlay.show{opacity:1;pointer-events:all;}
+  .nav-panel{background:white;width:min(340px,100vw);height:100%;overflow-y:auto;transform:translateX(-100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;}
+  .nav-overlay.show .nav-panel{transform:translateX(0);}
+  .nav-header{background:linear-gradient(135deg,#ff7043,#ffa040);padding:24px 20px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .nav-header h2{font-family:'Baloo 2',cursive;color:white;font-size:1.4rem;}
+  .nav-close{background:rgba(255,255,255,0.2);border:none;border-radius:10px;width:36px;height:36px;color:white;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .nav-close:hover{background:rgba(255,255,255,0.35);}
+  .nav-body{padding:20px;display:flex;flex-direction:column;gap:12px;flex:1;}
+  .nav-label{font-family:'Baloo 2',cursive;font-size:0.85rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding-bottom:6px;border-bottom:2px solid #fce4dc;margin-bottom:2px;}
+  .nav-card{display:flex;align-items:center;gap:16px;background:#fafafa;border:1.5px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;text-decoration:none;color:var(--text);transition:all 0.18s;}
+  .nav-card:hover{border-color:var(--accent1);background:#fff8f6;box-shadow:0 4px 16px rgba(255,112,67,0.12);transform:translateY(-1px);}
+  .nav-card-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;}
+  .nav-card-icon.orange{background:linear-gradient(135deg,#ff7043,#ffa040);}
+  .nav-card-icon.blue{background:linear-gradient(135deg,#42a5f5,#64b5f6);}
+  .nav-card-icon.cyan{background:linear-gradient(135deg,#00d4ff,#0090c0);}
+  .nav-card-text{}
+  .nav-card-title{font-family:'Baloo 2',cursive;font-size:1rem;font-weight:700;}
+  .nav-card-sub{font-size:0.78rem;color:var(--muted);margin-top:2px;}
   .sync-bar{background:#fff8f0;border-bottom:2px solid var(--border);padding:6px 16px;display:flex;align-items:center;gap:8px;font-size:0.75rem;font-weight:700;}
   .sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
   .sync-dot.connected{background:#66bb6a;} .sync-dot.offline{background:#ff7043;} .sync-dot.syncing{background:#ffd54f;animation:pulse 1s infinite;}
@@ -184,6 +206,7 @@
 <header>
   <h1>⭐ Family Points Tracker</h1>
   <p>Earn points, earn rewards!</p>
+  <button class="nav-btn" onclick="openNav()" title="Pages">🧭</button>
   <button class="settings-btn" onclick="openSettings()" title="Settings">⚙️</button>
 </header>
 <div class="sync-bar" id="syncBar">
@@ -453,6 +476,46 @@ function choreDragEnd(){dragSrcIdx=null;document.querySelectorAll('.chore-edit-r
 function saveSettings(){const jackpotReward=parseInt(document.getElementById('s_jackpotReward').value);const partialReward=parseInt(document.getElementById('s_partialReward').value);const jackpotThreshold=parseInt(document.getElementById('s_jackpotThreshold').value);const partialThreshold=parseInt(document.getElementById('s_partialThreshold').value);const startPoints=parseInt(document.getElementById('s_startPoints').value);if([jackpotReward,partialReward,jackpotThreshold,partialThreshold,startPoints].some(isNaN)){showToast('⚠️ Please fill in all fields');return;}if(jackpotThreshold<=partialThreshold){showToast('⚠️ Jackpot threshold must be above minimum');return;}if(jackpotReward<partialReward){showToast('⚠️ Jackpot reward should be ≥ partial reward');return;}const validKids=settingsKids.filter(k=>k.name.trim());if(validKids.length===0){showToast('⚠️ Add at least one child');return;}const validChores=settingsChores.filter(c=>c.label.trim()&&c.pts>0);state.config={jackpotReward,partialReward,jackpotThreshold,partialThreshold,startPoints};state.chores=validChores;const oldKids=state.currentWeek.kids;state.kids=validKids;state.currentWeek.kids=validKids.map((k,i)=>{const existing=oldKids.find(o=>o.name===k.name);return existing?{...existing,emoji:k.emoji,name:k.name}:{name:k.name,emoji:k.emoji,startPoints,currentPoints:startPoints,log:{}};});const fbConfig={...state.config,kids:Object.fromEntries(state.kids.map((k,i)=>['kid_'+i,{name:k.name,emoji:k.emoji}])),chores:Object.fromEntries(state.chores.map((c,i)=>['chore_'+i,{...c}]))};fbWrite('config',fbConfig);fbWrite('currentWeek',state.currentWeek);closeSettings();renderKids();showToast('✅ Settings saved!');}
 initFirebase();
 renderKids();
+</script>
+
+<!-- ── Navigation overlay — slides in from left, mirrors settings panel style ── -->
+<div class="nav-overlay" id="navOverlay" onclick="handleNavOverlayClick(event)">
+  <div class="nav-panel">
+    <div class="nav-header">
+      <h2>🧭 Pages</h2>
+      <button class="nav-close" onclick="closeNav()">✕</button>
+    </div>
+    <div class="nav-body">
+      <div class="nav-label">Jump to</div>
+      <a class="nav-card" href="kids.html">
+        <div class="nav-card-icon orange">👧</div>
+        <div class="nav-card-text">
+          <div class="nav-card-title">Kids Dashboard</div>
+          <div class="nav-card-sub">View each child's progress &amp; activity</div>
+        </div>
+      </a>
+      <a class="nav-card" href="Tic-tac-toe.html">
+        <div class="nav-card-icon blue">⭕</div>
+        <div class="nav-card-text">
+          <div class="nav-card-title">Tic-Tac-Toe</div>
+          <div class="nav-card-sub">Two-player noughts &amp; crosses</div>
+        </div>
+      </a>
+      <a class="nav-card" href="jetpack/jetpack.html">
+        <div class="nav-card-icon cyan">⚡</div>
+        <div class="nav-card-text">
+          <div class="nav-card-title">Jetpack Blitz</div>
+          <div class="nav-card-sub">Dodge obstacles, collect coins</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+function openNav()  { document.getElementById('navOverlay').classList.add('show'); document.body.style.overflow='hidden'; }
+function closeNav() { document.getElementById('navOverlay').classList.remove('show'); document.body.style.overflow=''; }
+function handleNavOverlayClick(e) { if(e.target===document.getElementById('navOverlay')) closeNav(); }
 </script>
 </body>
 </html>
