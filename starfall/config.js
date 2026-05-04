@@ -75,7 +75,7 @@ const Config = Object.freeze({
     shielded: Object.freeze({ hp: 240, speed: 0.9, lives: 1, size: 0.85, shieldHp: 150 }),
     heavy:    Object.freeze({ hp: 800, speed: 0.75, lives: 1, size: 1.05 }),
     sprinter: Object.freeze({ hp: 150, speed: 2.5, lives: 1, size: 0.75, shieldHp: 250 }),
-    carrier:  Object.freeze({ hp: 400, speed: 0.8, lives: 2, size: 1.00, droneCount: 4 }),
+    carrier:  Object.freeze({ hp: 400, speed: 0.8, lives: 2, size: 1.00, droneCount: 4, droneInvulnerableMs: 3000 }),
   }),
 
   LIVES: Object.freeze({

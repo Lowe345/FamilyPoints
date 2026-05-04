@@ -120,13 +120,12 @@ const GameState = (() => {
     if (!e) return false;
     // Invulnerable window — no damage at all
     if (e.invulnerableUntil > s.virtualTime) return false;
-    // Shield absorbs damage first
+    // Shield absorbs all damage at half rate; nothing passes through to HP
     if (e.shieldHp > 0) {
-      const absorbed = Math.min(e.shieldHp, amount);
-      e.shieldHp -= absorbed;
-      amount     -= absorbed;
-      if (amount <= 0) return false; // shield absorbed everything
+      e.shieldHp = Math.max(0, e.shieldHp - amount * 0.5);
+      return false;
     }
+ 
     e.hp = Math.max(0, e.hp - amount);
     return e.hp <= 0;
   }

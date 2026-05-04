@@ -68,7 +68,7 @@ const EnemyManager = (() => {
   // Spawn drones at a carrier's path position when it dies.
   function spawnCarrierDrones(state, carrier) {
     const droneCount       = Config.ENEMIES.carrier.droneCount;
-    const invulnerableUntil = state.virtualTime + 800;
+    const invulnerableUntil = state.virtualTime + Config.ENEMIES.carrier.droneInvulnerableMs;
     for (let i = 0; i < droneCount; i++) {
       const pidx = Math.max(0, carrier.pathIndex - i);
       const drone = GameState.spawnEnemy('drone', pidx, { invulnerableUntil });
