@@ -277,6 +277,7 @@ const Game = (() => {
   return { start, setSpeed, getSpeed };
 })();
 
+
 /* ═══════════════════════════════════════════════════════════════════════════
    TESTS
    Run on boot. Failing test names appear directly in the banner (KB §1).
