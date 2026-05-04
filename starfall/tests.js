@@ -527,8 +527,7 @@ const Tests = (() => {
     const banner = document.getElementById('test-banner');
     const total  = passed + failed;
     if (failed === 0) {
-      banner.textContent = `✅ All ${total} tests passed`;
-      banner.className = 'pass';
+      banner.style.display='none';
     } else {
       banner.textContent = `❌ ${failed}/${total} failed: ${failedLabels.join(' · ')}`;
       banner.className = 'fail';
