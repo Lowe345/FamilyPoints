@@ -12,7 +12,6 @@ const Config = Object.freeze({
   CELL: Object.freeze({ EMPTY: 0, PATH: 1, START: 2, END: 3 }),
 
   ECONOMY: Object.freeze({
-    STARTING_CREDITS: 250,
     SELL_REFUND:      0.6,   // fraction of cost returned on sell
     MOVE_FEE:         20,    // credits charged to relocate a tower
 
@@ -203,7 +202,7 @@ const Config = Object.freeze({
     Object.freeze({
       name: 'Perimeter',
       waves: 10,
-      startingCredits: 500,
+      startingCredits: 250,
       lives: 20,
       // 0=EMPTY, 1=PATH, 2=START, 3=END  (19 cols × 14 rows)
       tiles: Object.freeze([
