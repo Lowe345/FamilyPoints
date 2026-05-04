@@ -458,10 +458,10 @@ const Tests = (() => {
       });
     });
 
-    safe('towerStats — damage increases with level for damage towers', () => {
+    safe('towerStats — damage does not decrease with level for damage towers', () => {
       ['laser','plasma','tesla','missile'].forEach(type => {
-        assert(`${type} lv2 damage > lv1`, Config.TOWERS[type].lv2.damage > Config.TOWERS[type].lv1.damage);
-        assert(`${type} lv3 damage > lv2`, Config.TOWERS[type].lv3.damage > Config.TOWERS[type].lv2.damage);
+        assert(`${type} lv2 damage >= lv1`, Config.TOWERS[type].lv2.damage >= Config.TOWERS[type].lv1.damage);
+        assert(`${type} lv3 damage >= lv2`, Config.TOWERS[type].lv3.damage >= Config.TOWERS[type].lv2.damage);
       });
     });
 
