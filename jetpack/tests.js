@@ -305,17 +305,21 @@ const Tests = (() => {
         !GameState.canSpawnObstacle());
     });
 
-    safe('canSpawnObstacle — allowed after minSpawnFrames have elapsed', () => {
+    safe('canSpawnObstacle — allowed after both frame-gap and spacing are satisfied', () => {
       GameState.init('normal');
       const cfg = Config.MODE.normal;
-      // Record a spawn, then advance frames past the minimum gap
       GameState.recordObstacleSpawn(Config.W + 20);
-      // Scroll lastObstacleX far enough left AND advance frames
-      for (let i = 0; i < cfg.minSpawnFrames + 1; i++) {
+      // Both constraints must pass:
+      //   frame gap:  minSpawnFrames frames must elapse
+      //   spacing:    lastObstacleX must scroll MIN_OBSTACLE_SPACING px left
+      // Use whichever requires more frames — ceiling of spacing / speed, or minSpawnFrames.
+      const framesForSpacing = Math.ceil(Config.MIN_OBSTACLE_SPACING / cfg.baseSpeed);
+      const totalFrames = Math.max(cfg.minSpawnFrames, framesForSpacing) + 1;
+      for (let i = 0; i < totalFrames; i++) {
         GameState.incrementFrame();
         GameState.scrollLastObstacleX(cfg.baseSpeed);
       }
-      assert('can spawn after minSpawnFrames frames have passed',
+      assert('can spawn once both frame-gap and spacing constraints are satisfied',
         GameState.canSpawnObstacle());
     });
 
