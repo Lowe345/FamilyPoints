@@ -13,6 +13,7 @@ const Game = (() => {
   function start() {
     _stopMenuLoop();
     _stopLoops();
+    Renderer.clearDeathScreen();
     GameState.init(_mode);
     Renderer.setup();
 
@@ -151,7 +152,7 @@ const Game = (() => {
     GameState.setDead();
     const state = GameState.get();
     if (state.dist > _bestDist) _bestDist = state.dist;
-    UI.showOver(state, _bestDist);
+    Renderer.drawDeathScreen(state.dist, state.coins);
   }
 
   return { setMode, start, restart, returnToMenu };

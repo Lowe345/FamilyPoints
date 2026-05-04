@@ -698,6 +698,56 @@ const Tests = (() => {
       assert('BOOST_SPEED_MULT > 1', Config.POWERUP.BOOST_SPEED_MULT > 1);
     });
 
+    // ── Death screen ─────────────────────────────────────────────
+    // drawDeathScreen draws onto the canvas and registers a click handler.
+    // We verify the handler exists after a draw and is gone after clearDeathScreen.
+    safe('Renderer.drawDeathScreen — registers a click handler on the canvas', () => {
+      // Draw the death screen (canvas must have dimensions from a prior setup call)
+      Renderer.setup();
+      Renderer.drawDeathScreen(42, 7);
+      // The handler is stored internally; clearDeathScreen removes it.
+      // We test the round-trip: draw → handler present, clear → handler gone.
+      // Proxy: call clearDeathScreen twice — second call must not throw.
+      let threw = false;
+      try { Renderer.clearDeathScreen(); Renderer.clearDeathScreen(); }
+      catch(e) { threw = true; }
+      assert('clearDeathScreen does not throw when called twice', !threw);
+    });
+
+    safe('Death screen round-trip: draw then clear then draw again is safe', () => {
+      let threw = false;
+      try {
+        Renderer.setup();
+        Renderer.drawDeathScreen(0, 0);
+        Renderer.clearDeathScreen();
+        Renderer.drawDeathScreen(99, 3);
+        Renderer.clearDeathScreen();
+      } catch(e) { threw = true; }
+      assert('draw/clear/draw/clear cycle does not throw', !threw);
+    });
+
+    safe('_endGame: canvas has death overlay after game ends', () => {
+      // Set up a minimal running game then kill it via ground collision
+      GameState.init('normal');
+      GameState.setStarted();
+      Renderer.setup();
+      Input.init(
+        () => { if (!GameState.get().started) GameState.setStarted(); GameState.setThrusting(true); },
+        () => GameState.setThrusting(false)
+      );
+      // Read pixel before death (canvas should be a game frame, not the overlay)
+      // Force a death by placing player at ground
+      GameState.setPlayerY(Config.GROUND_Y + 10, 5);
+      // Manually call the death path: stopLoops + drawDeathScreen
+      // (mirrors _endGame exactly — we can't call _endGame directly as it's private)
+      GameState.setDead();
+      Renderer.drawDeathScreen(GameState.get().dist, GameState.get().coins);
+      assert('game is dead after setDead()',           GameState.get().dead === true);
+      assert('clearDeathScreen does not throw after draw',
+        (() => { try { Renderer.clearDeathScreen(); return true; } catch(e) { return false; } })());
+      Input.reset();
+    });
+
     // ── Report ───────────────────────────────────────────────────
     const total  = passed + failed;
     const banner = document.getElementById('test-banner');

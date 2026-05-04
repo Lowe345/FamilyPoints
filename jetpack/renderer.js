@@ -259,5 +259,97 @@ const Renderer = (() => {
     c.save(); c.shadowColor='#00aaff'; c.shadowBlur=10; c.fillStyle='#80e0ff'; c.fillRect(46,py2+2,8,4); c.restore();
   }
 
-  return { setup, drawFrame, drawMenuPreview };
+  // Draws a death overlay directly onto the frozen game canvas.
+  // Called once by _endGame after loops stop. Canvas pointer events are
+  // disabled by Input.reset() so the hit-test areas are registered via
+  // the click listener added here, cleared on the next Game.start().
+  let _deathClickHandler = null;
+  function drawDeathScreen(dist, coins) {
+    const W = Config.W, H = Config.H;
+    const cx = W / 2;
+
+    // Dim the frozen game
+    ctx.fillStyle = 'rgba(5,8,15,0.78)';
+    ctx.fillRect(0, 0, W, H);
+
+    // CRASHED heading
+    ctx.save();
+    ctx.shadowColor = '#f05050'; ctx.shadowBlur = 24;
+    ctx.fillStyle   = '#f05050';
+    ctx.font        = 'bold 900 28px Orbitron, monospace';
+    ctx.textAlign   = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('CRASHED!', cx, H/2 - 68);
+    ctx.restore();
+
+    // Stats line
+    ctx.fillStyle   = '#8090a0';
+    ctx.font        = '13px Exo\\ 2, sans-serif';
+    ctx.textAlign   = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(`${dist}m · ${coins} coins`, cx, H/2 - 40);
+
+    // Button geometry
+    const btnW = 130, btnH = 40, gap = 16;
+    const totalW = btnW * 2 + gap;
+    const retryX  = cx - totalW/2;
+    const menuX   = cx + gap/2;
+    const btnY    = H/2 - btnH/2 + 10;
+
+    // RETRY button
+    ctx.save();
+    ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 12;
+    ctx.fillStyle   = '#003a5a';
+    _roundRect(ctx, retryX, btnY, btnW, btnH, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle   = '#00d4ff';
+    ctx.font        = 'bold 12px Orbitron, monospace';
+    ctx.textAlign   = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('RETRY ⚡', retryX + btnW/2, btnY + btnH/2);
+
+    // MENU button
+    ctx.save();
+    ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 12;
+    ctx.fillStyle   = '#003a5a';
+    _roundRect(ctx, menuX, btnY, btnW, btnH, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle   = '#00d4ff';
+    ctx.font        = 'bold 12px Orbitron, monospace';
+    ctx.textAlign   = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('← MENU', menuX + btnW/2, btnY + btnH/2);
+
+    // Register a single click handler on the canvas for these buttons.
+    // We store it so Game.start() can remove it before the next game.
+    if (_deathClickHandler) canvas.removeEventListener('click', _deathClickHandler);
+    const scale = canvas.getBoundingClientRect().width / W;
+    _deathClickHandler = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) / scale;
+      const my = (e.clientY - rect.top)  / scale;
+      if (mx >= retryX && mx <= retryX+btnW && my >= btnY && my <= btnY+btnH) Game.restart();
+      if (mx >= menuX  && mx <= menuX+btnW  && my >= btnY && my <= btnY+btnH) Game.returnToMenu();
+    };
+    canvas.addEventListener('click', _deathClickHandler);
+  }
+
+  function clearDeathScreen() {
+    if (_deathClickHandler) {
+      canvas.removeEventListener('click', _deathClickHandler);
+      _deathClickHandler = null;
+    }
+  }
+
+  function _roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x+r, y);
+    c.lineTo(x+w-r, y); c.arcTo(x+w, y,   x+w, y+r,   r);
+    c.lineTo(x+w, y+h-r); c.arcTo(x+w, y+h, x+w-r, y+h, r);
+    c.lineTo(x+r, y+h); c.arcTo(x,   y+h, x,   y+h-r, r);
+    c.lineTo(x, y+r);   c.arcTo(x,   y,   x+r, y,     r);
+    c.closePath();
+  }
+
+  return { setup, drawFrame, drawMenuPreview, drawDeathScreen, clearDeathScreen };
 })();
