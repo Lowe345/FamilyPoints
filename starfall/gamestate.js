@@ -97,8 +97,8 @@ const GameState = (() => {
       hp:               cfg.hp,
       maxHp:            cfg.hp,
       // Shielded enemies have a shield pool that absorbs damage first
-      shieldHp:         type === 'shielded' ? cfg.shieldHp || 80 : 0,
-      maxShieldHp:      type === 'shielded' ? cfg.shieldHp || 80 : 0,
+      shieldHp:         cfg.shieldHp || 0,
+      maxShieldHp:      cfg.shieldHp || 0,
       speed:            cfg.speed,
       pathIndex,
       px: cell.col * Config.GRID.TILE + Config.GRID.TILE / 2,

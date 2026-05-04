@@ -20,9 +20,36 @@
     color: #c0e0f0;
     overflow-x: hidden;
   }
+  #orientation-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #060a0f;
+    color: #c0e0f0;
+    font-family: 'Share Tech Mono', monospace;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    font-size: 15px;
+    text-align: center;
+    z-index: 100;
+    padding: 24px;
+  }
+  #orientation-overlay .rotate-icon {
+    font-size: 52px;
+    animation: spin 2s linear infinite;
+  }
+  @keyframes spin {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @media (orientation: portrait) {
+    #orientation-overlay { display: flex; }
+  }
   #test-banner {
     width: 100%;
-    max-width: 900px;
+    max-width: 1008px;
     font-size: 11px;
     padding: 5px 12px;
     border-radius: 4px;
@@ -41,12 +68,16 @@
 </style>
 </head>
 <body>
+<div id="orientation-overlay">
+  <div class="rotate-icon">↻</div>
+  <div>Rotate your device to landscape to play</div>
+</div>
 <div id="test-banner"></div>
 <canvas id="game-canvas"></canvas>
 
 <!-- Load order matches dependency graph exactly. Bump ?v=N on every deployment. -->
 <script>
-  const V = '2';  // ← the only number you ever change
+  const V = '3';  // ← the only number you ever change
   const files = [
     'config','maploader','gamestate','enemymanager',
     'towermanager','projectilemanager','wavecontroller',

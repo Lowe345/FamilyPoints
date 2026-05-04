@@ -4,15 +4,14 @@ const Input = (() => {
   const canvasEl = Renderer.getCanvas();
 
   function _canvasCoords(e) {
-    if (!canvasEl) return { x: 0, y: 0 };
-    const rect  = canvasEl.getBoundingClientRect();
+    if (!canvasEl) return { x: 0, y: 0, pointerType: e.pointerType };
+    const rect   = canvasEl.getBoundingClientRect();
     const scaleX = canvasEl.width  / rect.width;
     const scaleY = canvasEl.height / rect.height;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top)  * scaleY,
+      x:           (e.clientX - rect.left) * scaleX,
+      y:           (e.clientY - rect.top)  * scaleY,
+      pointerType: e.pointerType,
     };
   }
 
@@ -46,9 +45,10 @@ const Input = (() => {
     });
 
     canvasEl.addEventListener('pointerleave', e => {
-      if (!_onMove) return;
-      // Clear hover when pointer leaves canvas
-      _onMove({ x: -1, y: -1 }, { col: -1, row: -1 });
+      const offPos  = { x: -1, y: -1, pointerType: e.pointerType };
+      const offCell = { col: -1, row: -1 };
+      if (_onMove) _onMove(offPos, offCell);
+      if (_onUp)   _onUp(offPos, offCell);
     });
   }
 

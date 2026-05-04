@@ -139,6 +139,15 @@ const Game = (() => {
     if (GameState.isBuildable(cell.col, cell.row)) {
       const cost = Config.TOWERS[state.selectedType].cost;
       if (GameState.canAfford(cost)) {
+        // Touch: first tap previews range; second tap on same cell places.
+        // Mouse: pointermove already set hoveredCell so placement is immediate.
+        if (pos.pointerType === 'touch') {
+          const h = state.hoveredCell;
+          if (!h || h.col !== cell.col || h.row !== cell.row) {
+            state.hoveredCell = { col: cell.col, row: cell.row };
+            return;
+          }
+        }
         GameState.clearSelection();
         GameState.spendCredits(cost);
         GameState.placeTower(cell.col, cell.row, state.selectedType);
@@ -157,7 +166,10 @@ const Game = (() => {
     state.hoveredCell = inGrid ? { col: cell.col, row: cell.row } : null;
   }
 
-  function _onPointerUp(pos, cell) { /* reserved */ }
+  function _onPointerUp(pos, cell) {
+    // Finger slid off canvas while moving a tower — cancel to avoid stuck state
+    if (pos.x < 0 && GameState.get().movingTower) _cancelMove();
+  }
 
   // ── Sidebar button routing ─────────────────────────────────────────────────
   function _handleSidebarClick(pos, state) {
@@ -218,14 +230,16 @@ const Game = (() => {
       return;
     }
 
-    // Tower type selector
-    const rowH   = 30;
-    const selY   = regions.towerSelectorY;
-    const types  = ['laser','cryo','plasma','tesla','missile'];
-    const idx    = Math.floor((pos.y - selY) / rowH);
-    if (idx >= 0 && idx < types.length) {
-      state.selectedType = types[idx];
-      GameState.clearSelection();
+    // Tower type selector — hidden when a tower is selected (towerSelectorY === -1)
+    const selY = regions.towerSelectorY;
+    if (selY >= 0) {
+      const rowH  = regions.towerRowH || 32;
+      const types = ['laser','cryo','plasma','tesla','missile'];
+      const idx   = Math.floor((pos.y - selY) / rowH);
+      if (idx >= 0 && idx < types.length) {
+        state.selectedType = types[idx];
+        GameState.clearSelection();
+      }
     }
   }
 

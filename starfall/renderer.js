@@ -317,83 +317,69 @@ const Renderer = (() => {
   // ── Sidebar UI panel ──────────────────────────────────────────────────────
   function _drawSidebar(state) {
     const sx = gridW;
-    const sy = 0;
     const sw = SB;
     const sh = totalH;
 
     // Background
     ctx.fillStyle = COL.sidebar;
-    ctx.fillRect(sx, sy, sw, sh);
+    ctx.fillRect(sx, 0, sw, sh);
     ctx.strokeStyle = COL.sidebarBorder;
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(sx+0.5, 0); ctx.lineTo(sx+0.5, sh); ctx.stroke();
 
     let y = 10;
     const cx = sx + sw/2;
+    const btnW = sw - 16;
 
     // ── HUD: credits / lives / wave ───────────────────────────────────────
-    _sbLabel(cx, y, 'CREDITS', COL.textMuted); y += 14;
-    _sbValue(cx, y, state.credits + 'cr', COL.green); y += 20;
+    _sbLabel(cx, y, 'CREDITS', COL.textMuted); y += 13;
+    _sbValue(cx, y, state.credits + 'cr', COL.green); y += 18;
 
-    _sbDivider(sx, y, sw); y += 8;
-    _sbLabel(cx, y, 'LIVES', COL.textMuted); y += 14;
+    _sbDivider(sx, y, sw); y += 7;
+    _sbLabel(cx, y, 'LIVES', COL.textMuted); y += 13;
     const livePct = state.lives / state.mapDef.lives;
     const liveCol = livePct > 0.5 ? COL.green : livePct > 0.25 ? COL.amber : COL.red;
-    _sbValue(cx, y, state.lives + ' / ' + state.mapDef.lives, liveCol); y += 20;
+    _sbValue(cx, y, state.lives + ' / ' + state.mapDef.lives, liveCol); y += 18;
 
-    _sbDivider(sx, y, sw); y += 8;
-    _sbLabel(cx, y, 'WAVE', COL.textMuted); y += 14;
-    _sbValue(cx, y, (state.wave+1) + ' / ' + state.mapDef.waves, COL.accent); y += 16;
-
-    // Wave pip bar
-    const pipW = 8, pipH = 5, pipGap = 3;
-    const totalPipW = state.mapDef.waves * (pipW+pipGap) - pipGap;
-    let px2 = cx - totalPipW/2;
-    for (let i = 0; i < state.mapDef.waves; i++) {
-      ctx.fillStyle = i < state.wave ? COL.green : i === state.wave ? COL.accent : COL.textMuted;
-      ctx.fillRect(Math.floor(px2), y, pipW, pipH);
-      px2 += pipW + pipGap;
-    }
-    y += pipH + 12;
+    _sbDivider(sx, y, sw); y += 7;
+    _sbLabel(cx, y, 'WAVE', COL.textMuted); y += 13;
+    _sbValue(cx, y, (state.wave+1) + ' / ' + state.mapDef.waves, COL.accent); y += 14;
 
     // ── Phase label + wave action button ─────────────────────────────────
-    _sbDivider(sx, y, sw); y += 8;
+    _sbDivider(sx, y, sw); y += 7;
     const phaseText = { build:'▶ BUILD PHASE', wave:'◉ WAVE ACTIVE', countdown:'◎ INCOMING', win:'★ VICTORY', lose:'✕ DEFEATED' };
     const phaseCol  = { build: COL.green, wave: COL.red, countdown: COL.amber, win: COL.green, lose: COL.red };
-    _sbLabel(cx, y, phaseText[state.phase] || state.phase, phaseCol[state.phase] || COL.accent); y += 14;
+    _sbLabel(cx, y, phaseText[state.phase] || state.phase, phaseCol[state.phase] || COL.accent); y += 13;
 
-    // Countdown display
     if (state.phase === 'countdown') {
       const remaining = Math.max(0, state.countdownEnd - Date.now());
       const secsLeft  = Math.ceil(remaining / 1000 / Game.getSpeed());
       ctx.fillStyle = COL.amber;
       ctx.font = `700 18px 'Orbitron',monospace`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(secsLeft + 's', cx, y + 4); y += 18;
+      ctx.fillText(secsLeft + 's', cx, y + 6); y += 16;
 
-      // Send early button
-      const btnW = sw-16, btnH = 20, btnY = y;
+      const btnH = 36, btnY = y;
       ctx.fillStyle = 'rgba(255,160,32,0.15)';
       ctx.fillRect(sx+8, btnY, btnW, btnH);
       ctx.strokeStyle = COL.amber; ctx.lineWidth = 0.5;
       ctx.strokeRect(sx+8, btnY, btnW, btnH);
       ctx.fillStyle = COL.amber;
-      ctx.font = `9px 'Share Tech Mono',monospace`;
+      ctx.font = `10px 'Share Tech Mono',monospace`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('SEND EARLY +' + Config.ECONOMY.WAVE_BONUS.send_early + 'cr', cx, btnY + btnH/2);
       _lastHitRegions.sendEarly = { x: sx+8, y: btnY, w: btnW, h: btnH };
       y += btnH + 4;
     } else {
       _lastHitRegions.sendEarly = null;
-      // Send wave button during build phase
       if (state.phase === 'build' && state.wave < state.mapDef.waves) {
-        const btnW = sw-16, btnH = 22, btnY = y;
+        const btnH = 36, btnY = y;
         ctx.fillStyle = 'rgba(64,255,128,0.10)';
         ctx.fillRect(sx+8, btnY, btnW, btnH);
         ctx.strokeStyle = COL.green; ctx.lineWidth = 0.5;
         ctx.strokeRect(sx+8, btnY, btnW, btnH);
         ctx.fillStyle = COL.green;
-        ctx.font = `9px 'Share Tech Mono',monospace`;
+        ctx.font = `10px 'Share Tech Mono',monospace`;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText('START WAVE ' + (state.wave + 1), cx, btnY + btnH/2);
         _lastHitRegions.startWave = { x: sx+8, y: btnY, w: btnW, h: btnH };
@@ -404,90 +390,54 @@ const Renderer = (() => {
       }
     }
 
-    // ── Tower selector ────────────────────────────────────────────────────
-    _sbDivider(sx, y, sw); y += 8;
-    _sbLabel(cx, y, 'BUILD TOWERS', COL.textMuted); y += 14;
-    _towerSelectorY = y;   // record for hit testing
-
-    const towerTypes = ['laser','cryo','plasma','tesla','missile'];
-    towerTypes.forEach(type => {
-      const cost    = Config.TOWERS[type].cost;
-      const sel     = state.selectedType === type;
-      const canBuy  = GameState.canAfford(cost);
-      const rowH    = 28;
-      const rowY    = y;
-
-      // Row background
-      ctx.fillStyle = sel ? 'rgba(0,212,255,0.07)' : 'transparent';
-      ctx.fillRect(sx+1, rowY, sw-2, rowH);
-      if (sel) {
-        ctx.fillStyle = COL.accent;
-        ctx.fillRect(sx+1, rowY, 2, rowH);
-      }
-
-      // Mini tower sprite (12px tile)
-      const miniS = 20;
-      const miniX = sx+8, miniY = rowY+4;
-      _drawTowerMini(miniX, miniY, miniS, type);
-
-      // Name + cost
-      ctx.fillStyle = canBuy ? COL.text : COL.textMuted;
-      ctx.font = `500 10px 'Share Tech Mono',monospace`;
-      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-      ctx.fillText(type.toUpperCase(), sx+32, rowY+rowH*0.38);
-      ctx.fillStyle = canBuy ? COL.green : COL.red;
-      ctx.font = `9px 'Share Tech Mono',monospace`;
-      ctx.fillText(cost+'cr', sx+32, rowY+rowH*0.72);
-      y += rowH + 2;
-    });
-
-    // ── Selected tower panel OR build-mode hint ───────────────────────────
-    y += 4;
-    _sbDivider(sx, y, sw); y += 8;
+    // ── Context-sensitive middle section ──────────────────────────────────
+    // When a tower is selected: show upgrade/move/sell panel.
+    // When nothing is selected: show tower type selector.
+    // The two never coexist, freeing vertical space for larger touch targets.
+    _sbDivider(sx, y, sw); y += 7;
 
     if (state.selectedTower) {
-      const st   = state.selectedTower;
-      const cfg  = Config.TOWERS[st.type];
-      const ac   = COL[st.type] || COL.accent;
+      const st  = state.selectedTower;
+      const cfg = Config.TOWERS[st.type];
+      const ac  = COL[st.type] || COL.accent;
+      const btnH = 36;
 
-      // Tower name + level
       ctx.fillStyle = ac;
-      ctx.font = `500 10px 'Share Tech Mono',monospace`;
+      ctx.font = `500 11px 'Share Tech Mono',monospace`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(st.type.toUpperCase() + ' · LV' + st.level, cx, y); y += 14;
+      ctx.fillText(st.type.toUpperCase() + ' · LV' + st.level, cx, y); y += 16;
 
-      // Upgrade button (greyed out at max level)
-      const canUpgrade = st.level < 3;
-      const upgCost    = st.level === 1 ? cfg.upgrade1 : cfg.upgrade2;
+      // Upgrade
+      const canUpgrade   = st.level < 3;
+      const upgCost      = st.level === 1 ? cfg.upgrade1 : cfg.upgrade2;
       const canAffordUpg = canUpgrade && GameState.canAfford(upgCost);
       const upgY = y;
-      const btnW = sw - 16, btnH = 20;
       ctx.fillStyle = canAffordUpg ? 'rgba(0,212,255,0.12)' : 'rgba(255,255,255,0.04)';
       ctx.fillRect(sx+8, upgY, btnW, btnH);
       ctx.strokeStyle = canAffordUpg ? COL.accent : COL.textMuted;
       ctx.lineWidth = 0.5; ctx.strokeRect(sx+8, upgY, btnW, btnH);
       ctx.fillStyle = canAffordUpg ? COL.accent : COL.textMuted;
-      ctx.font = `9px 'Share Tech Mono',monospace`;
+      ctx.font = `10px 'Share Tech Mono',monospace`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(canUpgrade ? 'UPGRADE  ' + upgCost + 'cr' : 'MAX LEVEL', cx, upgY + btnH/2);
       y += btnH + 4;
 
-      // Move button
-      const moveCost = Config.ECONOMY.MOVE_FEE;
+      // Move
+      const moveCost     = Config.ECONOMY.MOVE_FEE;
       const canAffordMove = GameState.canAfford(moveCost);
-      const isMoving = state.movingTower !== null;
+      const isMoving     = state.movingTower !== null;
       const moveY = y;
       ctx.fillStyle = isMoving ? 'rgba(255,160,32,0.15)' : canAffordMove ? 'rgba(0,212,255,0.08)' : 'rgba(255,255,255,0.04)';
       ctx.fillRect(sx+8, moveY, btnW, btnH);
       ctx.strokeStyle = isMoving ? COL.amber : canAffordMove ? COL.accent : COL.textMuted;
       ctx.lineWidth = 0.5; ctx.strokeRect(sx+8, moveY, btnW, btnH);
       ctx.fillStyle = isMoving ? COL.amber : canAffordMove ? COL.accent : COL.textMuted;
-      ctx.font = `9px 'Share Tech Mono',monospace`;
+      ctx.font = `10px 'Share Tech Mono',monospace`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(isMoving ? 'PLACING...' : 'MOVE  ' + moveCost + 'cr', cx, moveY + btnH/2);
       y += btnH + 4;
 
-      // Sell button
+      // Sell
       const sellRefund = Math.floor(cfg.cost * Config.ECONOMY.SELL_REFUND);
       const sellY = y;
       ctx.fillStyle = 'rgba(255,64,96,0.10)';
@@ -495,51 +445,77 @@ const Renderer = (() => {
       ctx.strokeStyle = COL.red; ctx.lineWidth = 0.5;
       ctx.strokeRect(sx+8, sellY, btnW, btnH);
       ctx.fillStyle = COL.red;
-      ctx.font = `9px 'Share Tech Mono',monospace`;
+      ctx.font = `10px 'Share Tech Mono',monospace`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('SELL  +' + sellRefund + 'cr', cx, sellY + btnH/2);
       y += btnH + 6;
 
-      // Store hit regions so Game can detect clicks without re-doing layout math
       _lastHitRegions.upgrade = { x: sx+8, y: upgY,  w: btnW, h: btnH };
       _lastHitRegions.move    = { x: sx+8, y: moveY, w: btnW, h: btnH };
       _lastHitRegions.sell    = { x: sx+8, y: sellY, w: btnW, h: btnH };
+      _lastHitRegions.towerSelectorY = -1;
+      _lastHitRegions.towerRowH      = 0;
+
     } else {
       _lastHitRegions.upgrade = null;
       _lastHitRegions.move    = null;
       _lastHitRegions.sell    = null;
-      _sbLabel(cx, y, state.movingTower ? 'CLICK TO PLACE' : 'CLICK TOWER', COL.textMuted); y += 12;
-      _sbLabel(cx, y, 'TO SELECT IT', COL.textMuted); y += 16;
+
+      _sbLabel(cx, y, 'BUILD TOWERS', COL.textMuted); y += 13;
+      _towerSelectorY = y;
+
+      const towerTypes = ['laser','cryo','plasma','tesla','missile'];
+      const rowH = 30;
+      towerTypes.forEach(type => {
+        const cost   = Config.TOWERS[type].cost;
+        const sel    = state.selectedType === type;
+        const canBuy = GameState.canAfford(cost);
+        const rowY   = y;
+
+        ctx.fillStyle = sel ? 'rgba(0,212,255,0.07)' : 'transparent';
+        ctx.fillRect(sx+1, rowY, sw-2, rowH);
+        if (sel) { ctx.fillStyle = COL.accent; ctx.fillRect(sx+1, rowY, 2, rowH); }
+
+        _drawTowerMini(sx+8, rowY+5, 20, type);
+
+        ctx.fillStyle = canBuy ? COL.text : COL.textMuted;
+        ctx.font = `500 10px 'Share Tech Mono',monospace`;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(type.toUpperCase(), sx+32, rowY+rowH*0.38);
+        ctx.fillStyle = canBuy ? COL.green : COL.red;
+        ctx.font = `10px 'Share Tech Mono',monospace`;
+        ctx.fillText(cost+'cr', sx+32, rowY+rowH*0.72);
+        y += rowH + 2;
+      });
+
+      _lastHitRegions.towerSelectorY = _towerSelectorY;
+      _lastHitRegions.towerRowH      = rowH + 2;
     }
 
-    // ── Speed control ─────────────────────────────────────────────────────
-    _sbDivider(sx, y, sw); y += 8;
+    // ── Speed control (always visible) ────────────────────────────────────
+    _sbDivider(sx, y, sw); y += 7;
     _sbLabel(cx, y, 'GAME SPEED', COL.textMuted); y += 12;
     const speeds   = [1, 2, 3];
     const curSpeed = Game.getSpeed();
     const sbtnW    = Math.floor((sw - 20) / 3);
+    const sbtH     = 30;
     speeds.forEach((spd, i) => {
       const bx  = sx + 8 + i * (sbtnW + 2);
       const by  = y;
       const sel = curSpeed === spd;
       ctx.fillStyle = sel ? 'rgba(0,212,255,0.18)' : 'rgba(255,255,255,0.03)';
-      ctx.fillRect(bx, by, sbtnW, 18);
+      ctx.fillRect(bx, by, sbtnW, sbtH);
       ctx.strokeStyle = sel ? COL.accent : COL.textMuted;
       ctx.lineWidth = sel ? 1 : 0.5;
-      ctx.strokeRect(bx, by, sbtnW, 18);
+      ctx.strokeRect(bx, by, sbtnW, sbtH);
       ctx.fillStyle = sel ? COL.accent : COL.textMuted;
-      ctx.font = `${sel ? '500' : '400'} 9px 'Share Tech Mono',monospace`;
+      ctx.font = `${sel ? '500' : '400'} 10px 'Share Tech Mono',monospace`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(spd + '×', bx + sbtnW/2, by + 9);
+      ctx.fillText(spd + '×', bx + sbtnW/2, by + sbtH/2);
     });
     _lastHitRegions.speedBtns = speeds.map((spd, i) => ({
-      spd,
-      x: sx + 8 + i * (sbtnW + 2), y, w: sbtnW, h: 18,
+      spd, x: sx + 8 + i * (sbtnW + 2), y, w: sbtnW, h: sbtH,
     }));
-    y += 22;
-
-    // ── Tower type selector hit regions ───────────────────────────────────
-    _lastHitRegions.towerSelectorY = _towerSelectorY;
   }
 
   // Hit region storage — updated each frame by _drawSidebar
@@ -548,6 +524,7 @@ const Renderer = (() => {
     startWave: null, sendEarly: null,
     speedBtns: [],
     towerSelectorY: 0,
+    towerRowH: 32,
   };
   let _towerSelectorY = 0;   // set during sidebar draw, read by hit test
 

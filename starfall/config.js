@@ -5,24 +5,24 @@ const Config = Object.freeze({
     TILE:    32,
     COLS:    19,
     ROWS:    14,
-    SIDEBAR: 160,   // px — canvas area reserved on the right for UI panel
+    SIDEBAR: 200,   // px — canvas area reserved on the right for UI panel
   }),
 
   // Map cell type constants
   CELL: Object.freeze({ EMPTY: 0, PATH: 1, START: 2, END: 3 }),
 
   ECONOMY: Object.freeze({
-    STARTING_CREDITS: 500,
+    STARTING_CREDITS: 250,
     SELL_REFUND:      0.6,   // fraction of cost returned on sell
     MOVE_FEE:         20,    // credits charged to relocate a tower
 
     KILL_REWARDS: Object.freeze({
-      drone:    8,
-      soldier:  15,
-      shielded: 22,
-      heavy:    40,
-      sprinter: 28,
-      carrier:  35,
+      drone:    5,
+      soldier:  10,
+      shielded: 20,
+      heavy:    30,
+      sprinter: 25,
+      carrier:  30,
     }),
 
     WAVE_BONUS: Object.freeze({
@@ -38,45 +38,45 @@ const Config = Object.freeze({
     laser: Object.freeze({
       cost:80, upgrade1:60, upgrade2:100,
       lv1: Object.freeze({ range:3.0, fireRate:800,  damage:20, pierce:1 }),
-      lv2: Object.freeze({ range:3.5, fireRate:680,  damage:36, pierce:2 }),
-      lv3: Object.freeze({ range:4.0, fireRate:560,  damage:56, pierce:3 }),
+      lv2: Object.freeze({ range:3.5, fireRate:680,  damage:20, pierce:2 }),
+      lv3: Object.freeze({ range:4.0, fireRate:560,  damage:20, pierce:3 }),
     }),
     cryo: Object.freeze({
       cost:70, upgrade1:50, upgrade2:90,
-      lv1: Object.freeze({ range:2.5, pulseRate:2000, damage:0, slowFactor:0.50, freezeMs:0 }),
-      lv2: Object.freeze({ range:3.0, pulseRate:1700, damage:0, slowFactor:0.40, freezeMs:0 }),
-      lv3: Object.freeze({ range:3.5, pulseRate:1400, damage:0, slowFactor:0.30, freezeMs:0 }),
+      lv1: Object.freeze({ range:2.5, pulseRate:2000, damage:0, slowFactor:0.6, freezeMs:0 }),
+      lv2: Object.freeze({ range:3.0, pulseRate:1800, damage:0, slowFactor:0.5, freezeMs:0 }),
+      lv3: Object.freeze({ range:3.5, pulseRate:1600, damage:0, slowFactor:0.4, freezeMs:0 }),
     }),
     plasma: Object.freeze({
       cost:120, upgrade1:80, upgrade2:130,
       // splashRadius in tiles, burnDamage applied per 500ms tick for 3 ticks at lv3
       lv1: Object.freeze({ range:3.5, fireRate:2200, damage:55, splashRadius:1.2, burnDamage:0   }),
-      lv2: Object.freeze({ range:3.8, fireRate:1900, damage:80, splashRadius:1.6, burnDamage:0   }),
-      lv3: Object.freeze({ range:4.2, fireRate:1600, damage:100,splashRadius:2.0, burnDamage:12  }),
+      lv2: Object.freeze({ range:3.8, fireRate:2000, damage:65, splashRadius:1.6, burnDamage:2   }),
+      lv3: Object.freeze({ range:4.2, fireRate:1800, damage:75,splashRadius:2.0, burnDamage:4  }),
     }),
     tesla: Object.freeze({
       cost:90, upgrade1:70, upgrade2:110,
       // chains = max enemies the arc jumps to after initial target
       lv1: Object.freeze({ range:2.0, fireRate:1300, damage:28, chains:1 }),
-      lv2: Object.freeze({ range:2.4, fireRate:1100, damage:45, chains:2 }),
-      lv3: Object.freeze({ range:2.8, fireRate:900,  damage:65, chains:4 }),
+      lv2: Object.freeze({ range:2.4, fireRate:1150, damage:45, chains:2 }),
+      lv3: Object.freeze({ range:2.8, fireRate:1000,  damage:45, chains:4 }),
     }),
     missile: Object.freeze({
       cost:150, upgrade1:110, upgrade2:160,
       // splashRadius in tiles, homes toward target
-      lv1: Object.freeze({ range:4.5, fireRate:3600, damage:110, splashRadius:1.5 }),
-      lv2: Object.freeze({ range:5.0, fireRate:3000, damage:170, splashRadius:2.0 }),
-      lv3: Object.freeze({ range:5.5, fireRate:2400, damage:240, splashRadius:2.5 }),
+      lv1: Object.freeze({ range:4.5, fireRate:3600, damage:65, splashRadius:1.5 }),
+      lv2: Object.freeze({ range:5.0, fireRate:3000, damage:80, splashRadius:2.0 }),
+      lv3: Object.freeze({ range:5.5, fireRate:2400, damage:100, splashRadius:2.5 }),
     }),
   }),
 
   ENEMIES: Object.freeze({
-    drone:    Object.freeze({ hp: 80,  speed: 2.2, lives: 1, size: 0.55 }),
+    drone:    Object.freeze({ hp: 80,  speed: 2.0, lives: 1, size: 0.55 }),
     soldier:  Object.freeze({ hp: 200, speed: 1.0, lives: 1, size: 0.80 }),
-    shielded: Object.freeze({ hp: 240, speed: 0.9, lives: 1, size: 0.85, shieldHp: 80 }),
-    heavy:    Object.freeze({ hp: 800, speed: 0.5, lives: 2, size: 1.05 }),
-    sprinter: Object.freeze({ hp: 360, speed: 2.0, lives: 1, size: 0.75 }),
-    carrier:  Object.freeze({ hp: 400, speed: 0.7, lives: 1, size: 1.00, droneCount: 3 }),
+    shielded: Object.freeze({ hp: 240, speed: 0.9, lives: 1, size: 0.85, shieldHp: 150 }),
+    heavy:    Object.freeze({ hp: 800, speed: 0.75, lives: 1, size: 1.05 }),
+    sprinter: Object.freeze({ hp: 150, speed: 2.5, lives: 1, size: 0.75, shieldHp: 250 }),
+    carrier:  Object.freeze({ hp: 400, speed: 0.8, lives: 2, size: 1.00, droneCount: 4 }),
   }),
 
   LIVES: Object.freeze({
@@ -104,22 +104,26 @@ const Config = Object.freeze({
     // Wave 1 — tutorial: drones only
     Object.freeze({ waveType:'standard', groups:[
       { type:'drone',   count:4 },
+      { type:'drone',   count:4, gap:2 },
     ]}),
     // Wave 2 — soldiers introduced
     Object.freeze({ waveType:'standard', groups:[
-      { type:'drone',   count:3 },
-      { type:'soldier', count:3 },
+      { type:'drone',   count:6 },
+      { type:'soldier', count:4, gap:1.5 },
+      { type:'soldier', count:4, gap:2 },
     ]}),
     // Wave 3 — bigger groups, quick follow-up
     Object.freeze({ waveType:'standard', groups:[
-      { type:'soldier', count:4 },
+      { type:'soldier', count:5 },
+      { type:'soldier', count:6, gap:1.5 },
       { type:'drone',   count:6, gap:0.5 },
     ]}),
     // Wave 4 — shielded introduced, dramatic pause before them
     Object.freeze({ waveType:'complex', groups:[
-      { type:'drone',    count:4 },
-      { type:'shielded', count:3, gap:2 },
-      { type:'soldier',  count:4 },
+      { type:'shielded',    count:4 },
+      { type:'drone', count:8, gap:0.5 },
+      { type:'soldier', count:6, gap:1.5 },
+      { type:'soldier',  count:10 },
     ]}),
     // Wave 5 — heavy introduced with a long warning pause
     Object.freeze({ waveType:'complex', groups:[
