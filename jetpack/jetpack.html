@@ -42,21 +42,14 @@
     #test-banner.fail { background: #2a0808; color: #f05050; display: block; }
 
     /* ── Screens ── */
-    #screen-menu, #screen-game {
+    #screen-menu, #screen-game, #screen-over {
       display: none; width: 100%; max-width: 620px;
       flex-direction: column; align-items: center;
     }
-    #screen-menu.active, #screen-game.active { display: flex; }
+    #screen-menu.active, #screen-game.active, #screen-over.active { display: flex; }
 
-    /* Over screen: fixed overlay so it always appears on top of the canvas */
-    #screen-over {
-      display: none; position: fixed; inset: 0; z-index: 100;
-      background: rgba(5,8,15,0.92);
-      flex-direction: column; align-items: center; justify-content: center;
-      padding: 24px 20px;
-    }
-    #screen-over.active { display: flex; }
-
+    /* Over screen gets extra padding so content is never crammed */
+    #screen-over { padding-top: 40px; padding-bottom: 40px; }
     /* ── Menu ── */
     .menu-art { width: 100%; max-width: 400px; height: 120px; margin-bottom: 18px; }
 

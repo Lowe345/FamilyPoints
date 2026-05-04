@@ -2,18 +2,10 @@
 
 const UI = (() => {
   function showScreen(name) {
-    // Menu and game screens toggle normally
-    ['menu', 'game'].forEach(s =>
+    ['menu', 'game', 'over'].forEach(s =>
       document.getElementById('screen-' + s).classList.remove('active')
     );
-    if (name === 'menu' || name === 'game') {
-      document.getElementById('screen-' + name).classList.add('active');
-      // Always hide the over overlay when switching to another screen
-      document.getElementById('screen-over').classList.remove('active');
-    } else if (name === 'over') {
-      // Over screen is a fixed overlay — show it on top without hiding game
-      document.getElementById('screen-over').classList.add('active');
-    }
+    document.getElementById('screen-' + name).classList.add('active');
   }
 
   function selectMode(mode, el) {

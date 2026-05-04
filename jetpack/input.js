@@ -15,8 +15,6 @@ const Input = (() => {
     document.getElementById('touch-btn').classList.remove('held');
   }
 
-  // All input sources funnel through these two functions.
-  // The callback guard is evaluated at call-time, not at listener registration.
   function thrustStart() {
     if (_onThrust) _onThrust();
     document.getElementById('touch-btn').classList.add('held');
@@ -27,7 +25,8 @@ const Input = (() => {
     document.getElementById('touch-btn').classList.remove('held');
   }
 
-  // Global keyboard listeners — always registered; guard is inside thrustStart/Stop.
+  // Keyboard — guard is inside thrustStart/Stop so Space does nothing
+  // when no callbacks are wired (i.e. not in an active game).
   document.addEventListener('keydown', e => {
     if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); thrustStart(); }
   });
@@ -35,11 +34,20 @@ const Input = (() => {
     if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); thrustStop(); }
   });
 
-  // Canvas pointer listeners — pointerleave ensures holding and drifting off canvas
-  // doesn't leave thrusting stuck at true.
+  // Canvas pointer — only preventDefault and fire thrust when a callback
+  // is actually wired. After _endGame calls Input.reset(), _onThrust is null
+  // so clicks fall through normally to any DOM elements (e.g. over-screen buttons).
   const gc = document.getElementById('game-canvas');
-  gc.addEventListener('pointerdown',  e => { e.preventDefault(); thrustStart(); });
-  gc.addEventListener('pointerup',    e => { e.preventDefault(); thrustStop();  });
+  gc.addEventListener('pointerdown', e => {
+    if (!_onThrust) return;   // game not active — let click pass through
+    e.preventDefault();
+    thrustStart();
+  });
+  gc.addEventListener('pointerup', e => {
+    if (!_onRelease) return;
+    e.preventDefault();
+    thrustStop();
+  });
   gc.addEventListener('pointerleave', () => thrustStop());
 
   return { init, reset, thrustStart, thrustStop };
