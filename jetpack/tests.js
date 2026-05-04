@@ -246,66 +246,172 @@ const Tests = (() => {
       assert('two addParticles calls = 2 particles', GameState.get().particles.length === 2);
     });
 
+
     // ── Spawner ─────────────────────────────────────────────────
-    safe('Spawner.spawnObstacle — returns null when spacing not met', () => {
-      GameState.init('normal');
-      const obs = Spawner.spawnObstacle(GameState.get(), Config.W);
-      assert('null when too close', obs === null);
+
+    // Spawner.spawnObstacle now always returns an obstacle (gating moved to
+    // GameState.canSpawnObstacle). Tests call it directly with a mock state.
+
+    safe('Spawner.spawnObstacle — always returns an obstacle object', () => {
+      const state = { cfg: Config.MODE.easy, playerY: 160 };
+      const obs = Spawner.spawnObstacle(state);
+      assert('returns non-null', obs !== null && obs !== undefined);
+      assert('has a type',       typeof obs.type === 'string');
+      assert('has an x',         typeof obs.x === 'number');
     });
 
-    safe('Spawner.spawnObstacle — returns obstacle when spacing met', () => {
-      GameState.init('normal');
-      const obs = Spawner.spawnObstacle(GameState.get(), -Config.MIN_OBSTACLE_SPACING);
-      assert('non-null when far enough', obs !== null);
-    });
-
-    safe('Spawner.spawnObstacle — spike gap >= MIN_GAP_Y (30 samples)', () => {
-      const es = { cfg: Config.MODE.easy, playerY: 160 };
-      for (let i = 0; i < 30; i++) {
-        const o = Spawner.spawnObstacle(es, -Config.MIN_OBSTACLE_SPACING);
-        if (!o || o.type !== 'spike') continue;
+    safe('Spawner.spawnObstacle — spike gap >= MIN_GAP_Y (50 samples)', () => {
+      const state = { cfg: Config.MODE.easy, playerY: 160 };
+      for (let i = 0; i < 50; i++) {
+        const o = Spawner.spawnObstacle(state);
+        if (o.type !== 'spike') continue;
         const gapTop    = Config.CEIL_Y + o.topH;
         const gapBottom = Config.GROUND_Y - o.botH;
         const gap       = gapBottom - gapTop;
-        assert('spike gap >= MIN_GAP_Y', gap >= Config.MIN_GAP_Y);
-        assert('spike topH >= 0',        o.topH >= 0);
-        assert('spike botH >= 0',        o.botH >= 0);
+        assert('spike gap >= MIN_GAP_Y',   gap >= Config.MIN_GAP_Y);
+        assert('spike gap <= MIN_GAP_Y+60',gap <= Config.MIN_GAP_Y + 60);
+        assert('spike topH >= 0',          o.topH >= 0);
+        assert('spike botH >= 0',          o.botH >= 0);
+        // Gap must be large enough for player (collision radius 11px) to pass through
+        assert('gap > 2x player collision radius', gap > Config.PLAYER_COLLISION_R * 2);
       }
     });
 
-    safe('Spawner.spawnObstacle — spike gap <= MIN_GAP_Y + 60', () => {
-      const es = { cfg: Config.MODE.easy, playerY: 160 };
-      for (let i = 0; i < 30; i++) {
-        const o = Spawner.spawnObstacle(es, -Config.MIN_OBSTACLE_SPACING);
-        if (!o || o.type !== 'spike') continue;
-        const gap = (Config.GROUND_Y - o.botH) - (Config.CEIL_Y + o.topH);
-        assert('spike gap <= MIN_GAP_Y + 60', gap <= Config.MIN_GAP_Y + 60);
-      }
-    });
-
-    safe('Spawner.spawnObstacle — hard mode all types', () => {
-      const hs = { cfg: Config.MODE.hard, playerY: 160 };
+    safe('Spawner.spawnObstacle — hard mode produces all three types', () => {
+      const state = { cfg: Config.MODE.hard, playerY: 160 };
       const types = new Set();
-      for (let i = 0; i < 200; i++) {
-        const o = Spawner.spawnObstacle(hs, -Config.MIN_OBSTACLE_SPACING);
-        if (o) types.add(o.type);
-      }
-      assert('missiles in hard', types.has('missile'));
-      assert('lasers in hard',   types.has('laser'));
-      assert('spikes in hard',   types.has('spike'));
+      for (let i = 0; i < 200; i++) types.add(Spawner.spawnObstacle(state).type);
+      assert('missiles spawn in hard', types.has('missile'));
+      assert('lasers spawn in hard',   types.has('laser'));
+      assert('spikes spawn in hard',   types.has('spike'));
     });
 
-    safe('Spawner.spawnObstacle — easy mode spikes only', () => {
-      const es = { cfg: Config.MODE.easy, playerY: 160 };
+    safe('Spawner.spawnObstacle — easy mode produces spikes only', () => {
+      const state = { cfg: Config.MODE.easy, playerY: 160 };
       const types = new Set();
-      for (let i = 0; i < 80; i++) {
-        const o = Spawner.spawnObstacle(es, -Config.MIN_OBSTACLE_SPACING);
-        if (o) types.add(o.type);
-      }
+      for (let i = 0; i < 80; i++) types.add(Spawner.spawnObstacle(state).type);
       assert('no missiles in easy', !types.has('missile'));
       assert('no lasers in easy',   !types.has('laser'));
-      assert('spikes in easy',       types.has('spike'));
+      assert('spikes appear in easy', types.has('spike'));
     });
+
+    // ── GameState.canSpawnObstacle — spawn gating ───────────────
+
+    safe('canSpawnObstacle — blocked immediately after spawn', () => {
+      GameState.init('normal');
+      // Simulate a spawn just happening this frame
+      GameState.recordObstacleSpawn(Config.W + 20);
+      assert('cannot spawn again immediately after recording one',
+        !GameState.canSpawnObstacle());
+    });
+
+    safe('canSpawnObstacle — allowed after minSpawnFrames have elapsed', () => {
+      GameState.init('normal');
+      const cfg = Config.MODE.normal;
+      // Record a spawn, then advance frames past the minimum gap
+      GameState.recordObstacleSpawn(Config.W + 20);
+      // Scroll lastObstacleX far enough left AND advance frames
+      for (let i = 0; i < cfg.minSpawnFrames + 1; i++) {
+        GameState.incrementFrame();
+        GameState.scrollLastObstacleX(cfg.baseSpeed);
+      }
+      assert('can spawn after minSpawnFrames frames have passed',
+        GameState.canSpawnObstacle());
+    });
+
+    safe('canSpawnObstacle — blocked if frames ok but obstacle not scrolled far enough', () => {
+      GameState.init('normal');
+      const cfg = Config.MODE.normal;
+      // Record a spawn, advance frames but DON'T scroll lastObstacleX
+      GameState.recordObstacleSpawn(Config.W + 20);
+      for (let i = 0; i < cfg.minSpawnFrames + 1; i++) GameState.incrementFrame();
+      // lastObstacleX still near W+20, spacing not met
+      assert('blocked when frames ok but obstacle not scrolled far enough',
+        !GameState.canSpawnObstacle());
+    });
+
+    safe('canSpawnObstacle — minSpawnFrames differs across modes', () => {
+      assert('easy minSpawnFrames >= normal',
+        Config.MODE.easy.minSpawnFrames >= Config.MODE.normal.minSpawnFrames);
+      assert('normal minSpawnFrames >= hard',
+        Config.MODE.normal.minSpawnFrames >= Config.MODE.hard.minSpawnFrames);
+      assert('easy minSpawnFrames > hard (less frequent)',
+        Config.MODE.easy.minSpawnFrames > Config.MODE.hard.minSpawnFrames);
+    });
+
+    // ── Spawn frequency simulation — obstacles appear at expected rate ──
+
+    // Simulates N frames of game update (spawn + scroll logic only) and
+    // counts how many obstacles would have been placed. Returns the count.
+    function simulateSpawns(mode, totalFrames) {
+      GameState.init(mode);
+      GameState.setStarted();
+      let count = 0;
+      for (let f = 0; f < totalFrames; f++) {
+        GameState.incrementFrame();
+        const spd = GameState.effectiveSpeed();
+        GameState.scrollLastObstacleX(spd);
+        if (GameState.canSpawnObstacle()) {
+          const obs = Spawner.spawnObstacle(GameState.get());
+          GameState.recordObstacleSpawn(obs.x);
+          count++;
+        }
+      }
+      return count;
+    }
+
+    safe('Spawn frequency — easy: at least 1 obstacle per 10 seconds', () => {
+      // 10 seconds at ~60fps = 600 frames. Easy minSpawnFrames=240 so expect ~2
+      const count = simulateSpawns('easy', 600);
+      assert('easy: >= 1 obstacle in 600 frames (10s)', count >= 1);
+    });
+
+    safe('Spawn frequency — easy: no more than 4 obstacles per 10 seconds', () => {
+      // Upper bound — too many and it becomes unplayable on easy
+      const count = simulateSpawns('easy', 600);
+      assert('easy: <= 4 obstacles in 600 frames (10s)', count <= 4);
+    });
+
+    safe('Spawn frequency — normal: more frequent than easy', () => {
+      const easyCount   = simulateSpawns('easy',   1200);
+      const normalCount = simulateSpawns('normal', 1200);
+      assert('normal spawns more obstacles than easy over 20s', normalCount > easyCount);
+    });
+
+    safe('Spawn frequency — hard: more frequent than normal', () => {
+      const normalCount = simulateSpawns('normal', 1200);
+      const hardCount   = simulateSpawns('hard',   1200);
+      assert('hard spawns more obstacles than normal over 20s', hardCount > normalCount);
+    });
+
+    safe('Spawn frequency — hard: at least 6 obstacles per 20 seconds', () => {
+      // 20s = 1200 frames. Hard minSpawnFrames=90, so expect ~8+
+      const count = simulateSpawns('hard', 1200);
+      assert('hard: >= 6 obstacles in 1200 frames (20s)', count >= 6);
+    });
+
+    safe('Spawn frequency — MIN_OBSTACLE_SPACING is always respected', () => {
+      // After each spawn, lastObstacleX must have scrolled >= MIN_OBSTACLE_SPACING
+      // before a new spawn is allowed. Verify by checking the gap at spawn time.
+      GameState.init('normal');
+      GameState.setStarted();
+      let lastX = GameState.get().lastObstacleX;
+      let violations = 0;
+      for (let f = 0; f < 2000; f++) {
+        GameState.incrementFrame();
+        const spd = GameState.effectiveSpeed();
+        GameState.scrollLastObstacleX(spd);
+        if (GameState.canSpawnObstacle()) {
+          const spawnX = Config.W + 20;
+          const gap = spawnX - GameState.get().lastObstacleX;
+          if (gap < Config.MIN_OBSTACLE_SPACING) violations++;
+          const obs = Spawner.spawnObstacle(GameState.get());
+          GameState.recordObstacleSpawn(obs.x);
+        }
+      }
+      assert('MIN_OBSTACLE_SPACING never violated across 2000 frames', violations === 0);
+    });
+
 
     safe('Spawner.spawnCoinRow', () => {
       const coins = Spawner.spawnCoinRow(300);

@@ -78,9 +78,11 @@ const Game = (() => {
     if (dead && !GameState.isShielded()) { _endGame(); return; }
 
     // ── Spawn ─────────────────────────────────────────────────
-    if (Math.random() < state.cfg.obstacleRate) {
-      const obs = Spawner.spawnObstacle(state, state.lastObstacleX);
-      if (obs) { state.obstacles.push(obs); GameState.setLastObstacleX(obs.x); }
+    // canSpawnObstacle() checks both frame-gap and spatial-gap constraints.
+    if (GameState.canSpawnObstacle()) {
+      const obs = Spawner.spawnObstacle(state);
+      state.obstacles.push(obs);
+      GameState.recordObstacleSpawn(obs.x);
     }
     if (state.frame % Config.COIN_SPAWN_EVERY === 0 && state.frame > 0)
       state.coins_arr.push(...Spawner.spawnCoinRow(Config.W + 10));
@@ -90,6 +92,7 @@ const Game = (() => {
     const spd = GameState.effectiveSpeed();
 
     // ── Scroll ────────────────────────────────────────────────
+    GameState.scrollLastObstacleX(spd);
     for (const o of state.obstacles) {
       o.x -= spd;
       if (o.type === 'missile') {

@@ -4,14 +4,12 @@ const Spawner = (() => {
   function _r(a, b)  { return a + Math.random() * (b - a); }
   function _ri(a, b) { return Math.floor(_r(a, b + 1)); }
 
-  // Returns an obstacle object, or null if the MIN_OBSTACLE_SPACING constraint
-  // is not yet met. lastObstacleX is the x of the most recent obstacle placed.
-  function spawnObstacle(state, lastObstacleX) {
+  // Spawn at a fixed x just off the right edge.
+  // Spacing and timing gates are handled by GameState.canSpawnObstacle() —
+  // this function always produces a valid obstacle when called.
+  function spawnObstacle(state) {
     const spawnX = Config.W + 20;
-
-    if (spawnX - lastObstacleX < Config.MIN_OBSTACLE_SPACING) return null;
-
-    const roll = Math.random();
+    const roll   = Math.random();
 
     if (state.cfg.missileOn && roll < 0.18)
       return { type: 'missile', x: spawnX,
@@ -25,10 +23,10 @@ const Spawner = (() => {
                blinkPhase: Math.random() < 0.5 ? 0 : Config.LASER_BLINK_MS,
                spawnTime: Date.now() };
 
-    // Spike pair — gap is always >= MIN_GAP_Y and <= MIN_GAP_Y + 60
-    const gap     = _r(Config.MIN_GAP_Y, Config.MIN_GAP_Y + 60);
-    const margin  = gap / 2 + 10;
-    const midY    = _r(Config.CEIL_Y + margin, Config.GROUND_Y - margin);
+    // Spike pair — gap guaranteed >= MIN_GAP_Y and <= MIN_GAP_Y + 60
+    const gap    = _r(Config.MIN_GAP_Y, Config.MIN_GAP_Y + 60);
+    const margin = gap / 2 + 10;
+    const midY   = _r(Config.CEIL_Y + margin, Config.GROUND_Y - margin);
     return {
       type: 'spike', x: spawnX, w: 34,
       topH: midY - gap / 2 - Config.CEIL_Y,

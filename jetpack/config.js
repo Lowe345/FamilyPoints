@@ -9,22 +9,33 @@ const Config = Object.freeze({
 
   // Physics
   GRAVITY:        0.10,
-  MAX_FALL:       2.0,   // terminal velocity downward
-  MAX_RISE:      -2.0,   // terminal velocity upward
+  MAX_FALL:       2.0,
+  MAX_RISE:      -2.0,
 
-  // Progressive thrust: ramps from INITIAL to MAX over RAMP_MS of held time
-  THRUST_INITIAL: -0.12, // impulse per frame at t=0
-  THRUST_MAX:     -0.20, // impulse per frame at full ramp
-  THRUST_RAMP_MS: 1000,  // ms to reach full thrust
+  // Progressive thrust
+  THRUST_INITIAL: -0.12,
+  THRUST_MAX:     -0.20,
+  THRUST_RAMP_MS: 1000,
 
   // Obstacle layout guarantees
-  MIN_GAP_Y:            100, // minimum vertical passage through a spike pair (px)
-  MIN_OBSTACLE_SPACING: 220, // minimum horizontal gap between obstacle leading edges (px)
+  // MIN_GAP_Y: minimum vertical clear passage through a spike pair (px).
+  //   Must be large enough for the player to fly through comfortably.
+  //   Player collision radius is 11px, so 80px gives ~4x diameter of clearance.
+  MIN_GAP_Y: 80,
+
+  // MIN_OBSTACLE_SPACING: minimum horizontal distance (px) between the
+  //   *current scrolled position* of the last obstacle and the new spawn point.
+  //   Prevents two obstacles occupying the screen at the same time too close together.
+  //   Spawn always happens at x = W + 20 = 580. This value must be < W so that
+  //   an obstacle can scroll off the left before a new one is allowed.
+  MIN_OBSTACLE_SPACING: 300,
 
   MODE: Object.freeze({
-    easy:   Object.freeze({ baseSpeed:1.0, speedInc:0.00004, obstacleRate:0.010, laserOn:false, missileOn:false }),
-    normal: Object.freeze({ baseSpeed:1.5, speedInc:0.00006, obstacleRate:0.016, laserOn:true,  missileOn:true  }),
-    hard:   Object.freeze({ baseSpeed:2.0, speedInc:0.00010, obstacleRate:0.022, laserOn:true,  missileOn:true  }),
+    //   minSpawnFrames: minimum frames between any two obstacle spawns.
+    //   At ~60fps: easy=240f=4s, normal=150f=2.5s, hard=90f=1.5s
+    easy:   Object.freeze({ baseSpeed:1.0, speedInc:0.00004, minSpawnFrames:240, laserOn:false, missileOn:false }),
+    normal: Object.freeze({ baseSpeed:1.5, speedInc:0.00006, minSpawnFrames:150, laserOn:true,  missileOn:true  }),
+    hard:   Object.freeze({ baseSpeed:2.0, speedInc:0.00010, minSpawnFrames:90,  laserOn:true,  missileOn:true  }),
   }),
 
   POWERUP: Object.freeze({
