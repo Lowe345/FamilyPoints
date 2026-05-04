@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Starfall Defence</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #060a0f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding: 12px 8px 24px;
+    gap: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    color: #c0e0f0;
+    overflow-x: hidden;
+  }
+  #test-banner {
+    width: 100%;
+    max-width: 900px;
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-family: 'Share Tech Mono', monospace;
+    display: none;
+  }
+  #test-banner.pass { background: #0a2a0a; color: #40ff80; display: block; border: 1px solid #1a4a1a; }
+  #test-banner.fail { background: #2a0808; color: #ff6060; display: block; border: 1px solid #4a1010; }
+  #game-canvas {
+    display: block;
+    cursor: crosshair;
+    touch-action: none;
+    image-rendering: pixelated;
+    max-width: 100%;
+  }
+</style>
+</head>
+<body>
+<div id="test-banner"></div>
+<canvas id="game-canvas"></canvas>
+
+<!-- Load order matches dependency graph exactly. Bump ?v=N on every deployment. -->
+<script src="config.js?v=1"></script>
+<script src="maploader.js?v=1"></script>
+<script src="gamestate.js?v=1"></script>
+<script src="enemymanager.js?v=1"></script>
+<script src="towermanager.js?v=1"></script>
+<script src="projectilemanager.js?v=1"></script>
+<script src="wavecontroller.js?v=1"></script>
+<script src="screenmanager.js?v=1"></script>
+<script src="renderer.js?v=1"></script>
+<script src="input.js?v=1"></script>
+<script src="game.js?v=1"></script>
+<script src="tests.js?v=1"></script>
+<script src="main.js?v=1"></script>
+</body>
+</html>
