@@ -302,6 +302,16 @@ const Renderer = (() => {
     ctx.fillStyle = '#111'; ctx.fillRect(cx-bw/2, bary, bw, 3.5);
     ctx.fillStyle = hpFrac > 0.6 ? COL.hpGreen : hpFrac > 0.3 ? COL.hpAmber : COL.hpRed;
     ctx.fillRect(cx-bw/2, bary, bw*hpFrac, 3.5);
+
+    // Shield bar (shielded enemies only) — drawn above HP bar in blue
+    if (enemy.maxShieldHp > 0) {
+      const shieldFrac = enemy.shieldHp / enemy.maxShieldHp;
+      const sbary = bary - 5;
+      ctx.fillStyle = '#0a1a2a';
+      ctx.fillRect(cx-bw/2, sbary, bw, 3);
+      ctx.fillStyle = shieldFrac > 0 ? '#40b0ff' : '#0a1a2a';
+      ctx.fillRect(cx-bw/2, sbary, bw*shieldFrac, 3);
+    }
   }
 
   // ── Sidebar UI panel ──────────────────────────────────────────────────────

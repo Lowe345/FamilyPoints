@@ -12,17 +12,17 @@ const Config = Object.freeze({
   CELL: Object.freeze({ EMPTY: 0, PATH: 1, START: 2, END: 3 }),
 
   ECONOMY: Object.freeze({
-    STARTING_CREDITS: 250,
+    STARTING_CREDITS: 500,
     SELL_REFUND:      0.6,   // fraction of cost returned on sell
     MOVE_FEE:         20,    // credits charged to relocate a tower
 
     KILL_REWARDS: Object.freeze({
-      drone:    5,
-      soldier:  10,
-      shielded: 15,
-      heavy:    20,
-      sprinter: 25,
-      carrier:  30,
+      drone:    8,
+      soldier:  15,
+      shielded: 22,
+      heavy:    40,
+      sprinter: 28,
+      carrier:  35,
     }),
 
     WAVE_BONUS: Object.freeze({
@@ -71,12 +71,12 @@ const Config = Object.freeze({
   }),
 
   ENEMIES: Object.freeze({
-    drone:    Object.freeze({ hp: 100,  speed: 2.2, lives: 1, size: 0.55 }),
+    drone:    Object.freeze({ hp: 80,  speed: 2.2, lives: 1, size: 0.55 }),
     soldier:  Object.freeze({ hp: 200, speed: 1.0, lives: 1, size: 0.80 }),
-    shielded: Object.freeze({ hp: 500, speed: 0.9, lives: 1, size: 0.85 }),
+    shielded: Object.freeze({ hp: 240, speed: 0.9, lives: 1, size: 0.85, shieldHp: 80 }),
     heavy:    Object.freeze({ hp: 800, speed: 0.5, lives: 2, size: 1.05 }),
-    sprinter: Object.freeze({ hp: 400, speed: 2.0, lives: 1, size: 0.75 }),
-    carrier:  Object.freeze({ hp: 100, speed: 0.7, lives: 1, size: 1.00 }),
+    sprinter: Object.freeze({ hp: 360, speed: 2.0, lives: 1, size: 0.75 }),
+    carrier:  Object.freeze({ hp: 400, speed: 0.7, lives: 1, size: 1.00, droneCount: 3 }),
   }),
 
   LIVES: Object.freeze({

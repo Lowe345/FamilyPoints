@@ -88,25 +88,28 @@ const GameState = (() => {
   }
 
   // Enemy management
-  function spawnEnemy(type, pathIndex) {
+  function spawnEnemy(type, pathIndex, opts = {}) {
     const cfg  = Config.ENEMIES[type];
     const cell = s.path[pathIndex] || s.path[0];
     const enemy = {
-      id:         s.nextEnemyId++,
+      id:               s.nextEnemyId++,
       type,
-      hp:         cfg.hp,
-      maxHp:      cfg.hp,
-      speed:      cfg.speed,     // path-cells per second
-      pathIndex,                 // current position in path array
-      // Pixel position — centre of current path cell
+      hp:               cfg.hp,
+      maxHp:            cfg.hp,
+      // Shielded enemies have a shield pool that absorbs damage first
+      shieldHp:         type === 'shielded' ? cfg.shieldHp || 80 : 0,
+      maxShieldHp:      type === 'shielded' ? cfg.shieldHp || 80 : 0,
+      speed:            cfg.speed,
+      pathIndex,
       px: cell.col * Config.GRID.TILE + Config.GRID.TILE / 2,
       py: cell.row * Config.GRID.TILE + Config.GRID.TILE / 2,
-      // Sub-cell progress (0–1) towards next waypoint
-      progress:   0,
-      slowUntil:  0,             // timestamp — cryo effect expires
-      stunUntil:  0,             // timestamp — freeze effect expires
-      burnTick:   0,             // timestamp — next burn damage tick
-      burnDamage: 0,             // damage per burn tick (plasma lv3)
+      progress:         0,
+      slowUntil:        0,
+      stunUntil:        0,
+      burnTick:         0,
+      burnDamage:       0,
+      // Brief invulnerability window — used for carrier drone spawns
+      invulnerableUntil: opts.invulnerableUntil || 0,
     };
     s.enemies.push(enemy);
     return enemy;
@@ -115,8 +118,17 @@ const GameState = (() => {
   function damageEnemy(id, amount) {
     const e = s.enemies.find(e => e.id === id);
     if (!e) return false;
+    // Invulnerable window — no damage at all
+    if (e.invulnerableUntil > s.virtualTime) return false;
+    // Shield absorbs damage first
+    if (e.shieldHp > 0) {
+      const absorbed = Math.min(e.shieldHp, amount);
+      e.shieldHp -= absorbed;
+      amount     -= absorbed;
+      if (amount <= 0) return false; // shield absorbed everything
+    }
     e.hp = Math.max(0, e.hp - amount);
-    return e.hp <= 0;  // returns true if now dead
+    return e.hp <= 0;
   }
 
   function removeEnemy(id) {

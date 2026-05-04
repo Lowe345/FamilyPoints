@@ -40,7 +40,7 @@ const TowerManager = (() => {
       const fireRate = stats.fireRate || stats.pulseRate || 1000;
       if (vt < (tower.lastFiredAt || 0) + fireRate) continue;
 
-      const target = _findTarget(state.enemies, tx, ty, rangeP);
+      const target = _findTarget(state.enemies, tx, ty, rangeP, vt);
       if (!target) continue;
 
       tower.lastFiredAt = vt;
@@ -48,9 +48,10 @@ const TowerManager = (() => {
     }
   }
 
-  function _findTarget(enemies, tx, ty, rangeP) {
+  function _findTarget(enemies, tx, ty, rangeP, vt) {
     let best = null, bestPathIndex = -1;
     for (const enemy of enemies) {
+      if (enemy.invulnerableUntil > vt) continue;   // skip invulnerable drones
       const dx = enemy.px - tx, dy = enemy.py - ty;
       if (dx*dx + dy*dy > rangeP*rangeP) continue;
       if (enemy.pathIndex > bestPathIndex ||

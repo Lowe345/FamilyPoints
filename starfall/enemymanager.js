@@ -67,11 +67,13 @@ const EnemyManager = (() => {
 
   // Spawn drones at a carrier's path position when it dies.
   function spawnCarrierDrones(state, carrier) {
-    const droneCount = 3;
+    const droneCount       = Config.ENEMIES.carrier.droneCount;
+    const invulnerableUntil = state.virtualTime + 800;
     for (let i = 0; i < droneCount; i++) {
-      // Stagger drones slightly behind carrier's position
       const pidx = Math.max(0, carrier.pathIndex - i);
-      GameState.spawnEnemy('drone', pidx);
+      const drone = GameState.spawnEnemy('drone', pidx, { invulnerableUntil });
+      // Copy carrier's sub-cell progress so drones don't teleport to cell centre
+      drone.progress = Math.max(0, carrier.progress - i * 0.15);
     }
   }
 
