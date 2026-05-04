@@ -33,7 +33,6 @@
 
     .subtitle { font-size: 12px; color: #4a7090; letter-spacing: 2px; margin-bottom: 10px; }
 
-    /* ── Test banner ── */
     #test-banner {
       font-size: 11px; padding: 4px 12px; border-radius: 6px;
       margin-bottom: 8px; font-family: monospace; display: none;
@@ -47,22 +46,18 @@
       flex-direction: column; align-items: center;
     }
     #screen-menu.active, #screen-game.active, #screen-over.active { display: flex; }
-
-    /* Over screen gets extra padding so content is never crammed */
     #screen-over { padding-top: 40px; padding-bottom: 40px; }
+
     /* ── Menu ── */
     .menu-art { width: 100%; max-width: 400px; height: 120px; margin-bottom: 18px; }
-
     .mode-title {
       font-family: 'Orbitron', monospace; font-size: 11px;
       color: #4a7090; letter-spacing: 3px; margin-bottom: 12px;
     }
-
     .mode-cards {
       display: grid; grid-template-columns: repeat(3, 1fr);
       gap: 10px; width: 100%; margin-bottom: 20px;
     }
-
     .mode-card {
       background: #080f1a; border: 1.5px solid #1a3050; border-radius: 10px;
       padding: 14px 8px; cursor: pointer; text-align: center;
@@ -73,7 +68,6 @@
     .mode-card .icon { font-size: 24px; margin-bottom: 6px; }
     .mode-card .name { font-family: 'Orbitron', monospace; font-size: 11px; color: #c8e0ff; font-weight: 700; }
     .mode-card .desc { font-size: 10px; color: #3a5070; margin-top: 4px; line-height: 1.4; }
-
     .btn-play {
       background: linear-gradient(135deg, #003a5a, #006090);
       border: 2px solid #00d4ff; color: #00d4ff;
@@ -86,17 +80,16 @@
       background: linear-gradient(135deg, #005080, #0090c0);
       transform: scale(1.03); box-shadow: 0 0 30px #00d4ff55;
     }
-
     .controls-hint { font-size: 11px; color: #2a4060; margin-top: 14px; line-height: 1.9; text-align: center; }
 
-    /* ── HUD ── */
+    /* ── HUD — stats row + control buttons row ── */
     #hud {
       display: flex; align-items: center; justify-content: space-between;
-      width: 100%; max-width: 620px; padding: 6px 12px;
+      width: 100%; max-width: 620px; padding: 6px 10px;
       background: #080f1a; border: 1px solid #1a3050; border-radius: 8px;
-      margin-bottom: 8px; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 8px; gap: 6px; flex-wrap: nowrap;
     }
-    .hud-item { display: flex; align-items: center; gap: 5px; }
+    .hud-item { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
     .hud-label { color: #3a6080; font-size: 10px; font-family: 'Orbitron', monospace; letter-spacing: 1px; }
     .hud-val   { color: #00d4ff; font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700; }
     .hud-val.coins { color: #ffd060; }
@@ -104,7 +97,27 @@
     .badge-easy   { background: #0a2a0a; color: #40c080; border: 1px solid #208050; }
     .badge-normal { background: #1a1a0a; color: #d0b040; border: 1px solid #806020; }
     .badge-hard   { background: #2a0808; color: #f05050; border: 1px solid #803020; }
-    #powerup-hud  { font-size: 11px; color: #ff80ff; min-width: 80px; }
+    #powerup-hud  { font-size: 11px; color: #ff80ff; min-width: 60px; }
+
+    /* HUD control buttons — always visible during play */
+    .hud-ctrl-btn {
+      background: #0a1828;
+      border: 1.5px solid #1a4070;
+      border-radius: 8px;
+      color: #4a90c0;
+      font-family: 'Orbitron', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 5px 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background 0.1s, border-color 0.1s, color 0.1s;
+    }
+    .hud-ctrl-btn:active { background: #0a2840; border-color: #00d4ff; color: #00d4ff; }
 
     /* ── Canvas ── */
     #game-canvas {
@@ -113,17 +126,16 @@
       touch-action: none; cursor: pointer;
     }
 
-    /* ── Touch thrust button ── */
-    #touch-btn {
-      margin-top: 12px; width: 100px; height: 60px;
-      background: #0a1828; border: 2px solid #1a4070; border-radius: 12px;
-      color: #4a90c0; font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 1px;
-      cursor: pointer; user-select: none; -webkit-user-select: none;
-      transition: background 0.1s, border-color 0.1s;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    /* ── Thrust button — pure canvas image, no text ── */
+    #thrust-canvas {
+      margin-top: 12px;
+      cursor: pointer;
+      display: block;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
-    #touch-btn.held  { background: #0a2840; border-color: #00d4ff; color: #00d4ff; }
-    #touch-btn-icon  { font-size: 20px; }
 
     /* ── Game-over / end screen ── */
     .end-glow {
@@ -131,9 +143,7 @@
       letter-spacing: 3px; margin: 16px 0 6px;
     }
     .end-glow.dead { color: #f05050; text-shadow: 0 0 20px #f0505088; }
-
-    .end-sub { font-size: 13px; color: #4a7090; margin-bottom: 18px; text-align: center; }
-
+    .end-sub  { font-size: 13px; color: #4a7090; margin-bottom: 18px; text-align: center; }
     .end-stats {
       background: #080f1a; border: 1px solid #1a3050; border-radius: 10px;
       padding: 14px 28px; margin-bottom: 20px; text-align: center;
@@ -142,9 +152,7 @@
     .end-stats p    { font-size: 12px; color: #3a6080; margin: 5px 0; }
     .end-stats span { color: #00d4ff; font-weight: 600; font-family: 'Orbitron', monospace; }
     .end-stats .gold { color: #ffd060; }
-
     .highscore-line { font-family: 'Orbitron', monospace; font-size: 11px; color: #ff80ff; margin-bottom: 8px; }
-
     .over-btn-row { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
   </style>
 </head>
@@ -160,18 +168,15 @@
   <p class="mode-title">SELECT DIFFICULTY</p>
   <div class="mode-cards">
     <div class="mode-card" data-mode="easy" onclick="UI.selectMode('easy', this)">
-      <div class="icon">🌊</div>
-      <div class="name">EASY</div>
+      <div class="icon">🌊</div><div class="name">EASY</div>
       <div class="desc">Gentle obstacles. Wide gaps. Learn the ropes.</div>
     </div>
     <div class="mode-card selected" data-mode="normal" onclick="UI.selectMode('normal', this)">
-      <div class="icon">⚡</div>
-      <div class="name">NORMAL</div>
+      <div class="icon">⚡</div><div class="name">NORMAL</div>
       <div class="desc">Balanced challenge. Lasers, missiles &amp; spikes.</div>
     </div>
     <div class="mode-card" data-mode="hard" onclick="UI.selectMode('hard', this)">
-      <div class="icon">💀</div>
-      <div class="name">HARD</div>
+      <div class="icon">💀</div><div class="name">HARD</div>
       <div class="desc">Chaos mode. Everything is faster and meaner.</div>
     </div>
   </div>
@@ -185,29 +190,20 @@
 <!-- ── GAME SCREEN ── -->
 <div id="screen-game">
   <div id="hud">
-    <div class="hud-item">
-      <span class="hud-label">DIST</span>
-      <span class="hud-val" id="hud-dist">0m</span>
-    </div>
-    <div class="hud-item">
-      <span class="hud-val mode-badge" id="hud-mode">NORMAL</span>
-    </div>
-    <div class="hud-item">
-      <span class="hud-label">COINS</span>
-      <span class="hud-val coins" id="hud-coins">0</span>
-    </div>
-    <div class="hud-item">
-      <span class="hud-label">PWR</span>
-      <span id="powerup-hud">—</span>
+    <!-- Stats -->
+    <div class="hud-item"><span class="hud-label">DIST</span><span class="hud-val" id="hud-dist">0m</span></div>
+    <div class="hud-item"><span class="hud-val mode-badge" id="hud-mode">NORMAL</span></div>
+    <div class="hud-item"><span class="hud-label">COINS</span><span class="hud-val coins" id="hud-coins">0</span></div>
+    <div class="hud-item"><span class="hud-label">PWR</span><span id="powerup-hud">—</span></div>
+    <!-- Control buttons — always present so player can always escape -->
+    <div class="hud-item" style="margin-left:auto">
+      <button class="hud-ctrl-btn" onclick="Game.restart()">↺ RETRY</button>
+      <button class="hud-ctrl-btn" style="margin-left:6px" onclick="Game.returnToMenu()">⌂ MENU</button>
     </div>
   </div>
   <canvas id="game-canvas"></canvas>
-  <div id="touch-btn"
-       onpointerdown="Input.thrustStart()" onpointerup="Input.thrustStop()"
-       ontouchstart="Input.thrustStart()" ontouchend="Input.thrustStop()">
-    <div id="touch-btn-icon">🚀</div>
-    <div>THRUST</div>
-  </div>
+  <!-- Thrust button rendered as a canvas so the OS never triggers text selection -->
+  <canvas id="thrust-canvas" width="120" height="70"></canvas>
 </div>
 
 <!-- ── GAME OVER SCREEN ── -->

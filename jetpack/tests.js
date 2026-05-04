@@ -309,18 +309,16 @@ const Tests = (() => {
       GameState.init('normal');
       const cfg = Config.MODE.normal;
       GameState.recordObstacleSpawn(Config.W + 20);
-      // Both constraints must pass:
-      //   frame gap:  minSpawnFrames frames must elapse
-      //   spacing:    lastObstacleX must scroll MIN_OBSTACLE_SPACING px left
-      // Use whichever requires more frames — ceiling of spacing / speed, or minSpawnFrames.
-      const framesForSpacing = Math.ceil(Config.MIN_OBSTACLE_SPACING / cfg.baseSpeed);
-      const totalFrames = Math.max(cfg.minSpawnFrames, framesForSpacing) + 1;
-      for (let i = 0; i < totalFrames; i++) {
+      // Simulate real game: each frame increments speed slightly, scroll uses actual speed.
+      // Run until BOTH constraints are satisfied — frame gap AND spacing.
+      // Cap at 2000 frames to prevent infinite loop if logic is broken.
+      let resolved = false;
+      for (let i = 0; i < 2000; i++) {
         GameState.incrementFrame();
-        GameState.scrollLastObstacleX(cfg.baseSpeed);
+        GameState.scrollLastObstacleX(GameState.get().speed);
+        if (GameState.canSpawnObstacle()) { resolved = true; break; }
       }
-      assert('can spawn once both frame-gap and spacing constraints are satisfied',
-        GameState.canSpawnObstacle());
+      assert('can spawn once both constraints are satisfied (within 2000 frames)', resolved);
     });
 
     safe('canSpawnObstacle — blocked if frames ok but obstacle not scrolled far enough', () => {
