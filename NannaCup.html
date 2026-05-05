@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🏆 Nanna's Cup</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js?v=1"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js?v=1"></script>
+<style>
+  :root {
+    --gold:    #ffd54f;
+    --gold2:   #ff8f00;
+    --silver:  #cfd8dc;
+    --bronze:  #a1887f;
+    --radius:  20px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    background: #0f0f23;
+    overflow-x: hidden;
+    padding-bottom: 40px;
+  }
+
+  /* ── Background ── */
+  .bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(180,120,0,0.25) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 15%, rgba(255,160,0,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(120,80,0,0.2) 0%, transparent 50%),
+      #0f0f23;
+  }
+  .star { position: fixed; border-radius: 50%; background: #fff; opacity: 0; animation: twinkle var(--d,3s) var(--delay,0s) infinite; }
+  @keyframes twinkle { 0%,100%{opacity:0;transform:scale(.5);} 50%{opacity:var(--op,.7);transform:scale(1);} }
+
+  /* ── Back button ── */
+  .back-btn {
+    position: relative; z-index: 10;
+    display: inline-flex; align-items: center; gap: 6px;
+    margin: 18px 18px 0;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    border-radius: 50px;
+    padding: 7px 16px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border: 1px solid rgba(255,255,255,0.15);
+    transition: background 0.2s;
+  }
+  .back-btn:hover { background: rgba(255,255,255,0.18); }
+
+  /* ── Header ── */
+  header {
+    position: relative; z-index: 10;
+    text-align: center;
+    padding: 20px 16px 10px;
+  }
+  .trophy-icon {
+    font-size: 4rem; display: block;
+    animation: bob 2.4s ease-in-out infinite;
+    filter: drop-shadow(0 0 24px rgba(255,200,0,.9));
+    margin-bottom: 8px;
+  }
+  @keyframes bob { 0%,100%{transform:translateY(0) rotate(-3deg);} 50%{transform:translateY(-12px) rotate(3deg);} }
+  header h1 {
+    font-family: 'Baloo 2', cursive; font-weight: 800;
+    font-size: clamp(1.8rem, 7vw, 2.8rem);
+    background: linear-gradient(135deg, #ffe082, #ffb300, #ffe082);
+    background-size: 200% 200%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer-text 3s infinite;
+    text-shadow: none;
+    line-height: 1;
+  }
+  @keyframes shimmer-text { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+  .cup-subtitle {
+    color: rgba(255,220,120,.7); font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; margin-top: 6px;
+  }
+  .announce-date {
+    color: rgba(255,220,120,.55); font-size: 0.75rem; font-weight: 700;
+    margin-top: 4px;
+  }
+
+  /* ── Countdown card ── */
+  .countdown-card {
+    position: relative; z-index: 10;
+    margin: 18px 14px 0;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, rgba(255,180,0,.12), rgba(255,100,0,.08));
+    border: 1px solid rgba(255,180,0,.3);
+    padding: 18px 16px;
+    text-align: center;
+    backdrop-filter: blur(8px);
+  }
+  .countdown-label {
+    font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em;
+    text-transform: uppercase; color: rgba(255,200,80,.6); margin-bottom: 12px;
+  }
+  .countdown-nums {
+    display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+  }
+  .cd-block {
+    display: flex; flex-direction: column; align-items: center;
+    background: rgba(255,180,0,.1); border-radius: 14px;
+    padding: 10px 20px; border: 1px solid rgba(255,180,0,.2);
+    min-width: 80px;
+  }
+  .cd-num {
+    font-family: 'Baloo 2', cursive; font-weight: 800;
+    font-size: clamp(2rem, 8vw, 2.8rem);
+    color: var(--gold);
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(255,200,0,.5);
+  }
+  .cd-unit {
+    font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em;
+    text-transform: uppercase; color: rgba(255,200,80,.6); margin-top: 2px;
+  }
+  .cd-done {
+    font-family: 'Baloo 2', cursive; font-size: 1.2rem;
+    color: var(--gold); font-weight: 800;
+  }
+
+  /* ── Leaderboard ── */
+  .section-label {
+    position: relative; z-index: 10;
+    text-align: center; margin: 22px 0 12px;
+    font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em;
+    text-transform: uppercase; color: rgba(255,200,80,.5);
+  }
+
+  .leaderboard {
+    position: relative; z-index: 10;
+    margin: 0 14px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+
+  .rank-card {
+    border-radius: var(--radius);
+    padding: 16px;
+    backdrop-filter: blur(10px);
+    animation: fadeUp .5s both;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+
+  .rank-card.rank-1 {
+    background: linear-gradient(135deg, rgba(255,200,0,.22), rgba(255,130,0,.12));
+    border: 2px solid rgba(255,200,0,.45);
+    box-shadow: 0 0 30px rgba(255,180,0,.15);
+  }
+  .rank-card.rank-2 {
+    background: linear-gradient(135deg, rgba(190,210,220,.12), rgba(150,170,180,.08));
+    border: 1.5px solid rgba(180,200,210,.3);
+  }
+  .rank-card.rank-3 {
+    background: linear-gradient(135deg, rgba(160,110,80,.15), rgba(130,90,70,.08));
+    border: 1.5px solid rgba(160,120,90,.35);
+  }
+  .rank-card.rank-other {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+  }
+
+  .rank-top {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .rank-left { display: flex; align-items: center; gap: 12px; }
+  .rank-medal { font-size: 1.6rem; flex-shrink: 0; }
+  .rank-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.7rem; flex-shrink: 0;
+  }
+  .rank-1 .rank-avatar { background: rgba(255,200,0,.2); border: 2px solid rgba(255,200,0,.5); }
+  .rank-2 .rank-avatar { background: rgba(180,200,210,.15); border: 2px solid rgba(180,200,210,.4); }
+  .rank-3 .rank-avatar { background: rgba(160,110,80,.2); border: 2px solid rgba(160,120,90,.4); }
+  .rank-other .rank-avatar { background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.15); }
+
+  .rank-info {}
+  .rank-name {
+    font-family: 'Baloo 2', cursive; font-weight: 800;
+    font-size: clamp(1rem, 4vw, 1.2rem); color: #fff; line-height: 1;
+  }
+  .rank-weeks-label {
+    font-size: 0.68rem; font-weight: 700; color: rgba(255,255,255,.4);
+    margin-top: 3px;
+  }
+  .rank-pts {
+    font-family: 'Baloo 2', cursive; font-weight: 800;
+    font-size: clamp(1.6rem, 6vw, 2rem);
+    line-height: 1; text-align: right; flex-shrink: 0;
+  }
+  .rank-1 .rank-pts { color: var(--gold); text-shadow: 0 0 16px rgba(255,200,0,.5); }
+  .rank-2 .rank-pts { color: var(--silver); }
+  .rank-3 .rank-pts { color: var(--bronze); }
+  .rank-other .rank-pts { color: rgba(255,255,255,.8); }
+  .rank-pts-label {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; opacity: 0.6; display: block; text-align: right;
+  }
+
+  .rank-bar-wrap { width: 100%; }
+  .rank-bar-track {
+    height: 8px; border-radius: 10px;
+    background: rgba(0,0,0,.3); overflow: hidden;
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .rank-bar-fill {
+    height: 100%; border-radius: 10px;
+    transition: width 1.4s cubic-bezier(.4,0,.2,1);
+  }
+  .rank-1 .rank-bar-fill { background: linear-gradient(90deg, #f9a825, #ffe082); box-shadow: 0 0 10px rgba(255,180,0,.5); }
+  .rank-2 .rank-bar-fill { background: linear-gradient(90deg, #90a4ae, #cfd8dc); }
+  .rank-3 .rank-bar-fill { background: linear-gradient(90deg, #8d6e63, #bcaaa4); }
+  .rank-other .rank-bar-fill { background: linear-gradient(90deg, rgba(255,255,255,.25), rgba(255,255,255,.5)); }
+
+  .rank-breakdown {
+    margin-top: 10px;
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .wk-chip {
+    font-size: 0.67rem; font-weight: 700;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 20px; padding: 2px 9px;
+    color: rgba(255,255,255,.55);
+    white-space: nowrap;
+  }
+  .wk-chip.current { border-color: rgba(255,200,0,.35); color: rgba(255,200,120,.8); }
+
+  /* ── Loading ── */
+  .loading {
+    position: relative; z-index: 10;
+    text-align: center; padding: 60px 20px; color: rgba(255,255,255,.5);
+  }
+  .loading-spinner { font-size: 2.5rem; display: block; animation: spin 1s linear infinite; margin-bottom: 12px; }
+  @keyframes spin { to{transform:rotate(360deg);} }
+
+  /* ── Footer ── */
+  footer {
+    position: relative; z-index: 10;
+    text-align: center; color: rgba(255,255,255,.2);
+    font-size: 0.68rem; font-weight: 700; padding: 24px 20px 0;
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg" id="bg"></div>
+
+<a class="back-btn" href="kids.html">← Points Board</a>
+
+<header>
+  <span class="trophy-icon">🏆</span>
+  <h1>Nanna's Cup</h1>
+  <div class="cup-subtitle">The Ultimate Family Challenge</div>
+  <div class="announce-date">Winner announced 12 July 2026</div>
+</header>
+
+<div class="countdown-card" id="countdownCard">
+  <div class="countdown-label">⏳ Time remaining</div>
+  <div class="countdown-nums" id="countdownNums">
+    <div class="cd-block"><div class="cd-num" id="cdWeeks">—</div><div class="cd-unit">Weeks</div></div>
+    <div class="cd-block"><div class="cd-num" id="cdDays">—</div><div class="cd-unit">Days</div></div>
+  </div>
+</div>
+
+<div class="section-label">⭐ Current Standings</div>
+<div class="leaderboard" id="leaderboard">
+  <div class="loading">
+    <span class="loading-spinner">🏆</span>
+    <p>Loading standings…</p>
+  </div>
+</div>
+
+<footer id="footer"></footer>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCLMsal6EP0T8m6a9qaS79vaSiQAyzV4ag",
+  authDomain: "kids-points-afabf.firebaseapp.com",
+  databaseURL: "https://kids-points-afabf-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kids-points-afabf",
+  storageBucket: "kids-points-afabf.firebasestorage.app",
+  messagingSenderId: "746330750970",
+  appId: "1:746330750970:web:a8dc2dcbc9c9460f81ee43"
+};
+
+const CUP_END = new Date('2026-07-12T00:00:00');
+
+// ── Stars ────────────────────────────────────────────────
+(function buildStars() {
+  const bg = document.getElementById('bg');
+  for (let i = 0; i < 55; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.8;
+    s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--delay:${Math.random()*5}s;--op:${0.3+Math.random()*0.6}`;
+    bg.appendChild(s);
+  }
+})();
+
+// ── Countdown ────────────────────────────────────────────
+function updateCountdown() {
+  const now  = new Date();
+  const diff = CUP_END - now;
+  if (diff <= 0) {
+    document.getElementById('countdownNums').innerHTML =
+      '<div class="cd-done">🎉 The winner has been announced!</div>';
+    return;
+  }
+  const totalDays  = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  const weeks      = Math.floor(totalDays / 7);
+  const days       = totalDays % 7;
+  document.getElementById('cdWeeks').textContent = weeks;
+  document.getElementById('cdDays').textContent  = days;
+}
+updateCountdown();
+setInterval(updateCountdown, 60000);
+
+// ── Helpers ──────────────────────────────────────────────
+function toArray(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  return Object.entries(val).sort((a, b) => Number(a[0]) - Number(b[0])).map(([, v]) => v);
+}
+
+function shortDate(iso) {
+  if (!iso) return '?';
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+const MEDALS   = ['🥇', '🥈', '🥉'];
+const RANK_CLS = ['rank-1', 'rank-2', 'rank-3'];
+
+// ── Compute cumulative totals ─────────────────────────────
+function buildStandings(data) {
+  const totals = {}; // name → { name, emoji, total, breakdown[] }
+
+  function processWeek(week, isCurrent) {
+    const kids = toArray(week.kids);
+    kids.forEach(kid => {
+      if (!kid || !kid.name) return;
+      if (!totals[kid.name]) {
+        totals[kid.name] = { name: kid.name, emoji: kid.emoji || '⭐', total: 0, breakdown: [] };
+      }
+      const pts = kid.currentPoints != null ? kid.currentPoints : 0;
+      totals[kid.name].total += pts;
+      totals[kid.name].breakdown.push({
+        date: week.startDate,
+        pts,
+        isCurrent
+      });
+    });
+  }
+
+  // Past weeks (sorted oldest→newest so breakdown chips are in order)
+  const pastKeys = Object.keys(data.weeks || {}).sort();
+  pastKeys.forEach(k => processWeek(data.weeks[k], false));
+
+  // Current week
+  if (data.currentWeek) processWeek(data.currentWeek, true);
+
+  return Object.values(totals).sort((a, b) => b.total - a.total);
+}
+
+// ── Render leaderboard ───────────────────────────────────
+function renderStandings(standings) {
+  if (standings.length === 0) {
+    document.getElementById('leaderboard').innerHTML =
+      '<p style="color:rgba(255,255,255,.4);text-align:center;padding:20px">No data yet.</p>';
+    return;
+  }
+
+  const maxPts = standings[0].total || 1;
+  const totalWeeks = standings[0].breakdown.length;
+
+  let html = '';
+  standings.forEach((kid, i) => {
+    const rankCls  = RANK_CLS[i] || 'rank-other';
+    const medal    = MEDALS[i] || `#${i + 1}`;
+    const pct      = Math.max(4, Math.round((kid.total / maxPts) * 100));
+    const delay    = (i * 0.1).toFixed(1);
+
+    const chips = kid.breakdown.map(wk =>
+      `<span class="wk-chip${wk.isCurrent ? ' current' : ''}">${shortDate(wk.date)}: ${wk.pts}pts${wk.isCurrent ? ' ●' : ''}</span>`
+    ).join('');
+
+    html += `
+      <div class="rank-card ${rankCls}" style="animation-delay:${delay}s">
+        <div class="rank-top">
+          <div class="rank-left">
+            <div class="rank-medal">${medal}</div>
+            <div class="rank-avatar">${kid.emoji}</div>
+            <div class="rank-info">
+              <div class="rank-name">${kid.name}</div>
+              <div class="rank-weeks-label">across ${totalWeeks} week${totalWeeks !== 1 ? 's' : ''}</div>
+            </div>
+          </div>
+          <div class="rank-pts">
+            ${kid.total}
+            <span class="rank-pts-label">total pts</span>
+          </div>
+        </div>
+        <div class="rank-bar-wrap">
+          <div class="rank-bar-track">
+            <div class="rank-bar-fill" style="width:0%" data-pct="${pct}"></div>
+          </div>
+        </div>
+        ${kid.breakdown.length > 0 ? `<div class="rank-breakdown">${chips}</div>` : ''}
+      </div>`;
+  });
+
+  document.getElementById('leaderboard').innerHTML = html;
+
+  // Animate bars after paint
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.rank-bar-fill').forEach(el => {
+        el.style.width = el.dataset.pct + '%';
+      });
+    });
+  });
+
+  // Footer
+  const weekLabel = totalWeeks === 0 ? 'No weeks recorded yet'
+    : `Tracking ${totalWeeks} week${totalWeeks !== 1 ? 's' : ''} of points`;
+  document.getElementById('footer').textContent = weekLabel + ' · Updates automatically';
+}
+
+// ── Firebase ─────────────────────────────────────────────
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+
+db.ref('familyPoints').on('value', snap => {
+  const data = snap.val();
+  if (!data) {
+    document.getElementById('leaderboard').innerHTML =
+      '<p style="color:rgba(255,255,255,.4);text-align:center;padding:20px">No data yet. Open the parent app first.</p>';
+    return;
+  }
+  renderStandings(buildStandings(data));
+}, err => {
+  document.getElementById('leaderboard').innerHTML =
+    `<p style="color:rgba(255,100,100,.7);text-align:center;padding:20px">Error: ${err.message}</p>`;
+});
+</script>
+</body>
+</html>

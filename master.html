@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Points — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+  :root {
+    --bg: #f5f5f5; --card: #fff; --border: #e0e0e0;
+    --accent: #ff7043; --danger: #c62828; --success: #2e7d32;
+    --text: #212121; --muted: #757575; --radius: 12px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+
+  header {
+    background: linear-gradient(135deg, #37474f, #546e7a);
+    color: white; padding: 18px 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  }
+  header h1 { font-family: 'Baloo 2', cursive; font-size: 1.4rem; font-weight: 800; }
+  .nav-links { display: flex; gap: 10px; }
+  .nav-link {
+    background: rgba(255,255,255,0.15); color: white; text-decoration: none;
+    border-radius: 8px; padding: 6px 14px; font-size: 0.82rem; font-weight: 700; transition: background 0.2s;
+  }
+  .nav-link:hover { background: rgba(255,255,255,0.28); }
+
+  .sync-bar {
+    background: white; border-bottom: 2px solid var(--border);
+    padding: 6px 20px; display: flex; align-items: center; gap: 8px;
+    font-size: 0.78rem; font-weight: 700; color: var(--muted);
+  }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sync-dot.connected { background: #66bb6a; }
+  .sync-dot.offline    { background: #ef5350; }
+  .sync-dot.syncing    { background: #ffa726; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  .tabs { display: flex; background: white; border-bottom: 2px solid var(--border); padding: 0 20px; }
+  .tab {
+    padding: 12px 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+    border-bottom: 3px solid transparent; margin-bottom: -2px; color: var(--muted); transition: all 0.2s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; padding: 20px; max-width: 960px; margin: 0 auto; }
+  .tab-panel.active { display: block; }
+
+  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 16px; overflow: hidden; }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 1px solid var(--border); background: #fafafa; flex-wrap: wrap; gap: 10px;
+  }
+  .card-title { font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .pts-badge { background: #e3f2fd; color: #1565c0; border-radius: 20px; padding: 2px 10px; font-size: 0.82rem; font-weight: 800; }
+  .card-body { padding: 16px; }
+
+  .action-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    padding: 10px 12px; border-radius: 8px; flex-wrap: wrap;
+  }
+  .action-row.set  { background: #e8f5e9; border: 1.5px dashed #a5d6a7; }
+  .action-row.add  { background: #f9fbe7; border: 1.5px dashed #aed581; }
+  .action-row label { font-size: 0.78rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+
+  .log-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .log-table th {
+    text-align: left; padding: 6px 8px;
+    font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--muted); border-bottom: 2px solid var(--border);
+  }
+  .log-table td { padding: 7px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+  .log-table tr:last-child td { border-bottom: none; }
+  .log-table tr:hover td { background: #fafafa; }
+  .log-table tr.editing td { background: #fffde7; }
+  .delta-pos { color: var(--success); font-weight: 800; }
+  .delta-neg { color: var(--danger);  font-weight: 800; }
+  .delta-neu { color: #1565c0;        font-weight: 800; }
+  .no-log { color: var(--muted); font-size: 0.82rem; text-align: center; padding: 12px 8px; }
+
+  .btn {
+    border: none; border-radius: 8px; padding: 6px 14px;
+    font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.82rem;
+    cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #e64a19; }
+  .btn-success { background: #e8f5e9; color: var(--success); border: 1.5px solid #a5d6a7; }
+  .btn-success:hover { background: #c8e6c9; }
+  .btn-danger  { background: #fce4ec; color: var(--danger);  border: 1.5px solid #ef9a9a; }
+  .btn-danger:hover  { background: #ffcdd2; }
+  .btn-neutral { background: #f5f5f5; color: #555; border: 1.5px solid #e0e0e0; }
+  .btn-neutral:hover { background: #eeeeee; }
+  .btn-sm   { padding: 4px 10px; font-size: 0.75rem; }
+  .btn-icon { padding: 4px 8px; }
+
+  input[type="text"], input[type="number"] {
+    border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 10px;
+    font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 600;
+    outline: none; transition: border-color 0.2s; background: white;
+  }
+  input[type="text"]:focus, input[type="number"]:focus { border-color: var(--accent); }
+  .w-55  { width: 55px; }
+  .w-full { width: 100%; }
+
+  .week-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+  }
+  .week-title { font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 700; }
+  .week-title span { color: var(--accent); }
+
+  .history-row { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+  .history-row-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; cursor: pointer; user-select: none; flex-wrap: wrap; gap: 8px;
+  }
+  .history-row-header:hover { background: #fafafa; }
+  .history-row-info { display: flex; flex-direction: column; gap: 3px; }
+  .history-week-key  { font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 0.95rem; }
+  .history-summary   { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+  .history-payouts   { font-size: 0.78rem; color: var(--success); font-weight: 700; }
+  .history-row-body  { display: none; border-top: 1px solid var(--border); padding: 16px; }
+  .history-row-body.open { display: block; }
+  .history-kids-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .history-kid-block { background: #fafafa; border-radius: 8px; padding: 12px; border: 1px solid var(--border); }
+  .history-kid-name  { font-weight: 800; font-size: 0.88rem; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+
+  .danger-section { border: 2px solid #ffcdd2; border-radius: var(--radius); padding: 14px 16px; background: #fff5f5; margin-top: 16px; }
+  .danger-section-title { font-weight: 800; color: var(--danger); font-size: 0.85rem; margin-bottom: 10px; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #212121; color: white; padding: 10px 22px;
+    border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+    z-index: 500; transition: transform 0.3s; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal {
+    background: white; border-radius: var(--radius); padding: 24px;
+    max-width: 340px; width: 90%; text-align: center;
+    transform: scale(0.9); transition: transform 0.2s; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal-overlay.show .modal { transform: scale(1); }
+  .modal h2 { font-family: 'Baloo 2', cursive; font-size: 1.2rem; margin-bottom: 10px; }
+  .modal p  { color: var(--muted); font-size: 0.88rem; margin-bottom: 18px; line-height: 1.5; }
+  .modal-btns { display: flex; gap: 10px; justify-content: center; }
+
+  @media (max-width: 480px) {
+    .log-table th:first-child, .log-table td:first-child { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛠️ Family Points Admin</h1>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">⭐ Parent App</a>
+    <a class="nav-link" href="kids.html">👧 Kids Board</a>
+  </div>
+</header>
+
+<div class="sync-bar">
+  <div class="sync-dot offline" id="syncDot"></div>
+  <span id="syncLabel">Connecting…</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('current')">📅 Current Week</div>
+  <div class="tab"        onclick="switchTab('history')">🗂️ Past Weeks</div>
+</div>
+
+<div class="tab-panel active" id="panel-current">
+  <div id="currentContent"><p style="color:#999">Loading…</p></div>
+</div>
+<div class="tab-panel" id="panel-history">
+  <div id="historyContent"><p style="color:#999">Loading…</p></div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <h2 id="confirmTitle">Are you sure?</h2>
+    <p id="confirmMsg"></p>
+    <div class="modal-btns">
+      <button class="btn btn-neutral" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger"  id="confirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCLMsal6EP0T8m6a9qaS79vaSiQAyzV4ag",
+  authDomain: "kids-points-afabf.firebaseapp.com",
+  databaseURL: "https://kids-points-afabf-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kids-points-afabf",
+  storageBucket: "kids-points-afabf.firebasestorage.app",
+  messagingSenderId: "746330750970",
+  appId: "1:746330750970:web:a8dc2dcbc9c9460f81ee43"
+};
+
+let db = null;
+let state = { currentWeek: null, weeks: {}, config: {} };
+let editingLog = {};  // "kidIdx_logId" → true
+
+// ── Utilities ────────────────────────────────────────────────────────────────
+
+function toArray(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  return Object.entries(val).sort((a, b) => Number(a[0]) - Number(b[0])).map(([, v]) => v);
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function timeNow() {
+  return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function logEntries(kid) {
+  return Object.entries(kid.log || {})
+    .map(([id, v]) => ({ id, ...v }))
+    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+}
+
+function deltaClass(d) {
+  return d > 0 ? 'delta-pos' : d < 0 ? 'delta-neg' : 'delta-neu';
+}
+
+function deltaLabel(d) {
+  return d > 0 ? '+' + d : d === 0 ? '📝' : String(d);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── Confirm modal ────────────────────────────────────────────────────────────
+
+let _confirmCb = null;
+
+function showConfirm(title, msg, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent   = msg;
+  _confirmCb = cb;
+  document.getElementById('confirmModal').classList.add('show');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('show');
+  _confirmCb = null;
+}
+
+document.getElementById('confirmOk').onclick = () => { closeConfirm(); if (_confirmCb) _confirmCb(); };
+document.getElementById('confirmModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('confirmModal')) closeConfirm();
+});
+
+// ── Firebase helpers ─────────────────────────────────────────────────────────
+
+function setSyncStatus(s, label) {
+  document.getElementById('syncDot').className = 'sync-dot ' + s;
+  document.getElementById('syncLabel').textContent = label;
+}
+
+function fbSet(path, value) {
+  setSyncStatus('syncing', 'Saving…');
+  return db.ref('familyPoints/' + path).set(value)
+    .then(() => setSyncStatus('connected', 'Saved'))
+    .catch(e => { setSyncStatus('offline', 'Save failed: ' + e.message); throw e; });
+}
+
+function fbUpdate(path, updates) {
+  setSyncStatus('syncing', 'Saving…');
+  return db.ref('familyPoints/' + path).update(updates)
+    .then(() => setSyncStatus('connected', 'Saved'))
+    .catch(e => { setSyncStatus('offline', 'Save failed: ' + e.message); throw e; });
+}
+
+function fbRemove(path) {
+  setSyncStatus('syncing', 'Saving…');
+  return db.ref('familyPoints/' + path).remove()
+    .then(() => setSyncStatus('connected', 'Saved'))
+    .catch(e => { setSyncStatus('offline', 'Save failed: ' + e.message); throw e; });
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  const ids = ['current', 'history'];
+  document.querySelectorAll('.tab').forEach((el, i) => el.classList.toggle('active', ids[i] === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+// ── CURRENT WEEK — render ─────────────────────────────────────────────────────
+
+function renderCurrent() {
+  const cw = state.currentWeek;
+  if (!cw) {
+    document.getElementById('currentContent').innerHTML =
+      '<p style="color:#999">No current week. Start one in the parent app.</p>';
+    return;
+  }
+
+  const kids = cw.kids || [];
+  let html = `
+    <div class="week-bar">
+      <div class="week-title">Week of <span>${formatDate(cw.startDate)}</span></div>
+      <button class="btn btn-primary" onclick="startNewWeek()">🔄 Archive &amp; Start New Week</button>
+    </div>`;
+
+  kids.forEach((kid, i) => {
+    html += buildKidCard(kid, i, logEntries(kid));
+  });
+
+  document.getElementById('currentContent').innerHTML = html;
+}
+
+function buildKidCard(kid, kidIdx, entries) {
+  let rows = '';
+  if (entries.length === 0) {
+    rows = `<tr><td colspan="4" class="no-log">No activity yet</td></tr>`;
+  } else {
+    entries.forEach(entry => {
+      const ekey = kidIdx + '_' + entry.id;
+      if (editingLog[ekey]) {
+        rows += `<tr class="editing">
+          <td style="color:#aaa;font-size:0.75rem">${entry.time || '—'}</td>
+          <td><input type="number" id="ed_d_${ekey}" value="${entry.delta}" class="w-55"></td>
+          <td><input type="text"   id="ed_n_${ekey}" value="${entry.note || ''}" style="width:100%"></td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-success btn-sm" onclick="saveEdit(${kidIdx},'${entry.id}',${entry.delta})">💾 Save</button>
+            <button class="btn btn-neutral btn-sm" onclick="cancelEdit(${kidIdx},'${entry.id}')">✕</button>
+          </td>
+        </tr>`;
+      } else {
+        rows += `<tr>
+          <td style="color:#aaa;font-size:0.75rem">${entry.time || '—'}</td>
+          <td><span class="${deltaClass(entry.delta)}">${deltaLabel(entry.delta)}</span></td>
+          <td>${entry.note || '<em style="color:#bbb">no note</em>'}</td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-neutral btn-sm btn-icon" onclick="startEdit(${kidIdx},'${entry.id}')">✏️</button>
+            <button class="btn btn-danger  btn-sm btn-icon" onclick="deleteEntry(${kidIdx},'${entry.id}',${entry.delta})">🗑️</button>
+          </td>
+        </tr>`;
+      }
+    });
+  }
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">${kid.emoji} ${kid.name} <span class="pts-badge">${kid.currentPoints} pts</span></div>
+      </div>
+      <div class="card-body">
+
+        <div class="action-row set">
+          <label>Set points directly:</label>
+          <input type="number" id="setpts_${kidIdx}" class="w-55" value="${kid.currentPoints}" min="0" max="99">
+          <button class="btn btn-success btn-sm" onclick="setPoints(${kidIdx})">✓ Set</button>
+        </div>
+
+        <div class="action-row add">
+          <label>Add entry:</label>
+          <input type="number" id="new_d_${kidIdx}" class="w-55" placeholder="±pts">
+          <input type="text"   id="new_n_${kidIdx}" placeholder="Note (optional)" style="flex:1;min-width:120px">
+          <button class="btn btn-success btn-sm" onclick="addEntry(${kidIdx})">➕ Add</button>
+        </div>
+
+        <table class="log-table">
+          <thead><tr><th>Time</th><th>Pts</th><th>Note</th><th>Actions</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+
+      </div>
+    </div>`;
+}
+
+// ── CURRENT WEEK — actions ────────────────────────────────────────────────────
+
+function startEdit(kidIdx, logId) {
+  editingLog[kidIdx + '_' + logId] = true;
+  renderCurrent();
+}
+
+function cancelEdit(kidIdx, logId) {
+  delete editingLog[kidIdx + '_' + logId];
+  renderCurrent();
+}
+
+function saveEdit(kidIdx, logId, oldDelta) {
+  const ekey    = kidIdx + '_' + logId;
+  const newDelta = parseInt(document.getElementById('ed_d_' + ekey).value);
+  const newNote  = document.getElementById('ed_n_' + ekey).value.trim();
+  if (isNaN(newDelta)) { showToast('⚠️ Enter a valid number'); return; }
+
+  const kid       = state.currentWeek.kids[kidIdx];
+  const newPoints = kid.currentPoints + (newDelta - oldDelta);
+  delete editingLog[ekey];
+
+  fbUpdate(`currentWeek/kids/${kidIdx}`, {
+    currentPoints: newPoints,
+    [`log/${logId}/delta`]: newDelta,
+    [`log/${logId}/note`]:  newNote
+  }).then(() => showToast('✅ Entry updated'));
+}
+
+function deleteEntry(kidIdx, logId, delta) {
+  const suffix = delta !== 0 ? ` Points will be adjusted by ${-delta}.` : '';
+  showConfirm('Delete log entry?', `This will permanently remove this entry.${suffix}`, () => {
+    const kid       = state.currentWeek.kids[kidIdx];
+    const newPoints = kid.currentPoints - delta;
+    fbUpdate(`currentWeek/kids/${kidIdx}`, { currentPoints: newPoints })
+      .then(() => fbRemove(`currentWeek/kids/${kidIdx}/log/${logId}`))
+      .then(() => showToast('🗑️ Entry deleted'));
+  });
+}
+
+function addEntry(kidIdx) {
+  const deltaEl = document.getElementById('new_d_' + kidIdx);
+  const noteEl  = document.getElementById('new_n_' + kidIdx);
+  const delta   = parseInt(deltaEl.value);
+  const note    = noteEl.value.trim();
+  if (isNaN(delta)) { showToast('⚠️ Enter a point value (0 for a note-only entry)'); return; }
+
+  const kid       = state.currentWeek.kids[kidIdx];
+  const newPoints = kid.currentPoints + delta;
+  const logId     = 'log_' + Date.now();
+  const entry     = { delta, note, time: timeNow(), timestamp: Date.now() };
+
+  deltaEl.value = '';
+  noteEl.value  = '';
+
+  fbUpdate(`currentWeek/kids/${kidIdx}`, {
+    currentPoints: newPoints,
+    [`log/${logId}`]: entry
+  }).then(() => showToast(`✅ Entry added for ${kid.name}`));
+}
+
+function setPoints(kidIdx) {
+  const newPts = parseInt(document.getElementById('setpts_' + kidIdx).value);
+  if (isNaN(newPts) || newPts < 0) { showToast('⚠️ Enter a valid point value'); return; }
+
+  const kid  = state.currentWeek.kids[kidIdx];
+  const diff = newPts - kid.currentPoints;
+  if (diff === 0) { showToast('Points unchanged'); return; }
+
+  const logId = 'log_' + Date.now();
+  const entry = { delta: diff, note: 'Manual correction', time: timeNow(), timestamp: Date.now() };
+
+  fbUpdate(`currentWeek/kids/${kidIdx}`, {
+    currentPoints: newPts,
+    [`log/${logId}`]: entry
+  }).then(() => showToast(`✅ ${kid.name} set to ${newPts} pts`));
+}
+
+function startNewWeek() {
+  showConfirm(
+    '🔄 Archive & Start New Week?',
+    'The current week will be saved to history and all kids will reset to their starting points.',
+    () => {
+      const cfg   = state.config;
+      const cw    = state.currentWeek;
+      const kids  = cw.kids || [];
+      const { jackpotThreshold = 5, jackpotReward = 10, partialThreshold = 1, partialReward = 5, startPoints = 5 } = cfg;
+      const allJackpot = kids.every(k => k.currentPoints >= jackpotThreshold);
+      const key   = cw.key || new Date().toISOString().slice(0, 10);
+
+      const archived = {
+        ...cw,
+        endDate: new Date().toISOString(),
+        finalPayouts: Object.fromEntries(kids.map((k, i) => [
+          'kid_' + i,
+          { name: k.name, finalPoints: k.currentPoints,
+            payout: allJackpot ? jackpotReward : k.currentPoints >= partialThreshold ? partialReward : 0 }
+        ]))
+      };
+
+      const kidsList = cfg.kids
+        ? Object.entries(cfg.kids).sort((a, b) => a[0].localeCompare(b[0])).map(([, v]) => v)
+        : kids.map(k => ({ name: k.name, emoji: k.emoji }));
+
+      const newWeek = {
+        key: new Date().toISOString().slice(0, 10),
+        startDate: new Date().toISOString(),
+        endDate: null,
+        kids: kidsList.map(k => ({ name: k.name, emoji: k.emoji, startPoints, currentPoints: startPoints, log: {} }))
+      };
+
+      fbUpdate('', { [`weeks/${key}`]: archived, currentWeek: newWeek })
+        .then(() => showToast('🎉 New week started!'));
+    }
+  );
+}
+
+// ── PAST WEEKS — render ───────────────────────────────────────────────────────
+
+function renderHistory() {
+  const keys = Object.keys(state.weeks).sort().reverse();
+  let html = '';
+
+  if (keys.length === 0) {
+    html = '<p style="color:#999;margin-bottom:16px">No past weeks stored yet.</p>';
+  } else {
+    keys.forEach(key => { html += buildHistoryRow(key, state.weeks[key]); });
+  }
+
+  html += `
+    <div class="danger-section">
+      <div class="danger-section-title">🗑️ Danger Zone</div>
+      <button class="btn btn-danger" onclick="wipeAllWeeks()">💥 Wipe all past weeks</button>
+    </div>`;
+
+  document.getElementById('historyContent').innerHTML = html;
+}
+
+function buildHistoryRow(key, week) {
+  const kids    = toArray(week.kids);
+  const summary = kids.map(k => `${k.emoji || ''} ${k.name}: ${k.currentPoints ?? '?'} pts`).join(' · ');
+  const payouts = week.finalPayouts
+    ? Object.values(week.finalPayouts).map(p => `${p.name} $${p.payout}`).join(' · ')
+    : null;
+
+  const kidBlocks = kids.map(kid => {
+    const entries = logEntries(kid);
+    const logHtml = entries.length === 0
+      ? '<p class="no-log">No activity</p>'
+      : `<table class="log-table" style="font-size:0.78rem">
+          <thead><tr><th>Time</th><th>Pts</th><th>Note</th></tr></thead>
+          <tbody>${entries.map(e => `<tr>
+            <td style="color:#aaa">${e.time || '—'}</td>
+            <td><span class="${deltaClass(e.delta)}">${deltaLabel(e.delta)}</span></td>
+            <td>${e.note || '<em style="color:#bbb">no note</em>'}</td>
+          </tr>`).join('')}</tbody>
+        </table>`;
+
+    return `<div class="history-kid-block">
+      <div class="history-kid-name">${kid.emoji || ''} ${kid.name} <span class="pts-badge">${kid.currentPoints ?? '?'} pts</span></div>
+      ${logHtml}
+    </div>`;
+  }).join('');
+
+  return `<div class="history-row">
+    <div class="history-row-header" onclick="toggleHistoryRow('${key}')">
+      <div class="history-row-info">
+        <div class="history-week-key">📅 Week of ${formatDate(week.startDate)}</div>
+        <div class="history-summary">${summary}</div>
+        ${payouts ? `<div class="history-payouts">💰 ${payouts}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteWeek('${key}')">🗑️ Delete</button>
+        <span id="chev_${key}" style="color:#aaa;font-size:0.8rem">▶</span>
+      </div>
+    </div>
+    <div class="history-row-body" id="hwbody_${key}">
+      <div class="history-kids-grid">${kidBlocks}</div>
+    </div>
+  </div>`;
+}
+
+function toggleHistoryRow(key) {
+  const body = document.getElementById('hwbody_' + key);
+  const chev = document.getElementById('chev_' + key);
+  const open = body.classList.toggle('open');
+  chev.textContent = open ? '▼' : '▶';
+}
+
+// ── PAST WEEKS — actions ──────────────────────────────────────────────────────
+
+function deleteWeek(key) {
+  const week  = state.weeks[key];
+  const label = week ? formatDate(week.startDate) : key;
+  showConfirm('Delete week?', `Permanently delete the week of ${label}? This cannot be undone.`, () => {
+    fbRemove('weeks/' + key).then(() => showToast('🗑️ Week deleted'));
+  });
+}
+
+function wipeAllWeeks() {
+  const count = Object.keys(state.weeks).length;
+  if (count === 0) { showToast('No past weeks to delete'); return; }
+  showConfirm(
+    'Wipe all past weeks?',
+    `This will permanently delete all ${count} stored week${count !== 1 ? 's' : ''}. This cannot be undone.`,
+    () => fbSet('weeks', {}).then(() => showToast('💥 All past weeks deleted'))
+  );
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+
+firebase.initializeApp(FIREBASE_CONFIG);
+db = firebase.database();
+setSyncStatus('syncing', 'Connecting…');
+
+db.ref('familyPoints').on('value', snap => {
+  const data = snap.val();
+  if (!data) { setSyncStatus('offline', 'No data in database'); return; }
+
+  if (data.config)      state.config = data.config;
+  if (data.currentWeek) {
+    state.currentWeek = data.currentWeek;
+    state.currentWeek.kids = toArray(state.currentWeek.kids)
+      .map(k => ({ ...k, log: k.log || {} }));
+  }
+  state.weeks = data.weeks || {};
+
+  setSyncStatus('connected', 'Connected — live sync active');
+  renderCurrent();
+  renderHistory();
+}, err => setSyncStatus('offline', 'Error: ' + err.message));
+</script>
+</body>
+</html>
