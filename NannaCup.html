@@ -236,6 +236,14 @@
   }
   .wk-chip.current { border-color: rgba(255,200,0,.35); color: rgba(255,200,120,.8); }
 
+  .rank-prize {
+    display: inline-block; margin-top: 4px;
+    font-size: 0.68rem; font-weight: 800; border-radius: 20px; padding: 2px 9px;
+  }
+  .rank-prize-1 { background: rgba(255,200,0,.2); border: 1px solid rgba(255,200,0,.45); color: #ffd54f; }
+  .rank-prize-2 { background: rgba(190,210,220,.12); border: 1px solid rgba(180,200,210,.35); color: #cfd8dc; }
+  .rank-prize-3 { background: rgba(160,110,80,.2); border: 1px solid rgba(160,120,90,.4); color: #bcaaa4; }
+
   /* ── Loading ── */
   .loading {
     position: relative; z-index: 10;
@@ -341,6 +349,7 @@ function shortDate(iso) {
 
 const MEDALS   = ['🥇', '🥈', '🥉'];
 const RANK_CLS = ['rank-1', 'rank-2', 'rank-3'];
+const PRIZES   = ['$50', '$25', '$10'];
 
 // ── Compute cumulative totals ─────────────────────────────
 function buildStandings(data) {
@@ -404,6 +413,7 @@ function renderStandings(standings) {
             <div class="rank-info">
               <div class="rank-name">${kid.name}</div>
               <div class="rank-weeks-label">across ${totalWeeks} week${totalWeeks !== 1 ? 's' : ''}</div>
+              ${PRIZES[i] ? `<div class="rank-prize rank-prize-${i + 1}">💰 ${PRIZES[i]} prize</div>` : ''}
             </div>
           </div>
           <div class="rank-pts">
